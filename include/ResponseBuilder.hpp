@@ -12,7 +12,7 @@ class	ResponseBuilder
 		ResponseBuilder();
 
 		Response	buildResponse(const Request &request, const Route *route, const ServerConfig &config);
-		static Response	buildErrorResponse(int code, const ServerConfig &config);
+		Response	buildErrorResponse(int code, const ServerConfig &config);
 		
 	private:
 		Response	handleGET(const Request &request, const Route &route);

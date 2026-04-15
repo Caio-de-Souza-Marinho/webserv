@@ -4,9 +4,9 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "Client.hpp"
+#include "Server.hpp"
 
-class Server;
-class Client;
 class Router;
 class ResponseBuilder;
 class CGIHandler;
