@@ -12,6 +12,7 @@ class	Response
 		int					statusCode;
 		std::map<std::string, std::string>	headers;
 		std::string				body;
+
 		std::string		build() const;
 		static	std::string	getStatusMessage(int code);
 };

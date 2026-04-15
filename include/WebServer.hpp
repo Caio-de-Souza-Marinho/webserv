@@ -7,7 +7,6 @@
 
 class Server;
 class Client;
-class RequestParser;
 class Router;
 class ResponseBuilder;
 class CGIHandler;
@@ -23,7 +22,6 @@ class	WebServer
 		std::vector<Server>		servers;
 		std::map<int, Client>		clients;
 		std::map<int, Server*>		fdToServer;
-		RequestParser			*parser;
 		Router				*router;
 		ResponseBuilder			*responseBuilder;
 		CGIHandler			*cgiHandler;

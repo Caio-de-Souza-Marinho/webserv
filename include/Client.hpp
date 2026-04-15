@@ -8,6 +8,7 @@
 #include "Response.hpp"
 
 class Server;
+class RequestParser;
 
 enum	ClientState
 {
@@ -30,9 +31,11 @@ class	Client
 		ClientState	state;
 		bool		requestComplete;
 		time_t		lastActivity;
-		Server*		server;
+		Server		*server;
+		RequestParser	*parser;
 		pid_t		cgiPid;
 		int		cgiFd;
+		std::string	cgiBuffer;
 };
 
 #endif

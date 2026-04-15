@@ -7,7 +7,10 @@
 class	Request
 {
 	public:
+		Request();
+
 		std::string				method;
+		std::string				rawUri;
 		std::string				uri;
 		std::string				path;
 		std::string				query;
@@ -16,6 +19,9 @@ class	Request
 		std::string				body;
 		size_t					contentLength;
 		bool					isChunked;
+		bool					isComplete;
+
+		void	reset();
 };
 
 #endif

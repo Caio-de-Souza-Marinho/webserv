@@ -17,6 +17,11 @@ struct	Route
 	bool					autoindex;
 	std::string				uploadPath;
 	std::map<std::string, std::string>	cgiHandlers;
+
+	Route() :
+		redirectCode(0),
+		autoindex(false)
+	{}
 };
 
 struct	ServerConfig
@@ -26,6 +31,11 @@ struct	ServerConfig
 	size_t				maxBodySize;
 	std::map<int, std::string>	errorPages;
 	std::vector<Route>		routes;
+
+	ServerConfig() :
+		port(0),
+		maxBodySize(0)
+	{}
 };
 
 #endif

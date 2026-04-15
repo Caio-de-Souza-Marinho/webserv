@@ -7,6 +7,8 @@
 class	RequestParser
 {
 	public:
+		RequestParser();
+
 		enum State
 		{
 			REQUEST_LINE,
@@ -14,6 +16,9 @@ class	RequestParser
 			BODY,
 			COMPLETE
 		};
+
+		State	parse(Request &request, std::string &buffer);
+		void	reset();
 
 	private:
 		State	state;
@@ -23,11 +28,11 @@ class	RequestParser
 		size_t	currentChunkSize;
 		bool	readChunkSize;
 
-		bool		parseRequestLine(Request &req, std::string &buffer);
-		bool		parseHeaders(Request &req, std::string &buffer);
-		bool		parseBody(Request &req, std::string &buffer);
+		bool		parseRequestLine(Request &request, std::string &buffer);
+		bool		parseHeaders(Request &request, std::string &buffer);
+		bool		parseBody(Request &request, std::string &buffer);
 		std::string	extractLine(std::string &buffer);
-		void		parseURI(Request &req);
+		void		parseURI(Request &request);
 };
 
 #endif
