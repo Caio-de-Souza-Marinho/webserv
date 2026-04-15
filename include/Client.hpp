@@ -3,9 +3,11 @@
 
 #include <string>
 #include <ctime>
+
 #include "Request.hpp"
 #include "Response.hpp"
-#include "Server.hpp"
+
+class Server;
 
 enum	ClientState
 {
