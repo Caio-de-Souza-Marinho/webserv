@@ -16,11 +16,6 @@ class	Request
 		std::string				body;
 		size_t					contentLength;
 		bool					isChunked;
-
-		Request() :
-			contentLength(0),
-			isChunked(false)
-		{}
 };
 
 #endif

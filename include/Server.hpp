@@ -6,10 +6,10 @@
 class	Server
 {
 	public:
+		Server();
+
 		int		fd;
 	 	ServerConfig	config;
-
-		Server() : fd(-1) {}
 };
 
 #endif

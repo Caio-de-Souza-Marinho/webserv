@@ -19,6 +19,8 @@ enum	ClientState
 class	Client
 {
 	public:
+		Client();
+
 		int		fd;
 		std::string	readBuffer;
 		std::string	writeBuffer;
@@ -31,20 +33,6 @@ class	Client
 		Server*		server;
 		pid_t		cgiPid;
 		int		cgiFd;
-
-		Client();
-		/*
-		Client() :
-			fd(-1),
-			writeOffset(0),
-			state(READING),
-			requestComplete(false),
-			lastActivity(0),
-			server(NULL),
-			cgiPid(-1),
-			cgiFd(-1)
-		{}
-		*/
 };
 
 #endif
