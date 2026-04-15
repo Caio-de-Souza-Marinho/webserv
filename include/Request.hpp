@@ -6,7 +6,7 @@
 
 class	Request
 {
-	private:
+	public:
 		std::string				method;
 		std::string				uri;
 		std::string				path;
@@ -14,7 +14,13 @@ class	Request
 		std::string				version;
 		std::map<std::string, std::string>	headers;
 		std::string				body;
-		bool					isComplete;
+		size_t					contentLength;
+		bool					isChunked;
+
+		Request() :
+			contentLength(0),
+			isChunked(false)
+		{}
 };
 
 #endif

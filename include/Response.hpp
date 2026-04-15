@@ -8,12 +8,13 @@ class	Response
 {
 	public:
 		int					statusCode;
-		std::string				contentType;
 		std::map<std::string, std::string>	headers;
 		std::string				body;
 
-		std::string	build();	// assembles the raw HTTP response string
-		
+		Response();
+
+		std::string		build() const;
+		static	std::string	getStatusMessage(int code);
 };
 
 #endif

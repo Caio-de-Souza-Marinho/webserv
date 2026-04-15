@@ -6,8 +6,10 @@
 class	Server
 {
 	public:
-		int		fd;	// listeining socket
+		int		fd;
 	 	ServerConfig	config;
+
+		Server() : fd(-1) {}
 };
 
 #endif
