@@ -1,5 +1,5 @@
-#ifndef MYMETYPES_HPP
-#define MYMETYPES_HPP
+#ifndef MIMETYPES_HPP
+#define MIMETYPES_HPP
 
 #include <string>
 #include <map>
