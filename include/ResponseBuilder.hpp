@@ -23,6 +23,8 @@ class	ResponseBuilder
 		bool		fileExists(const std::string &path) const;
 		std::string	readFile(const std::string &path) const;
 		std::string	getContentType(const std::string &path) const;
+		bool		isDirectory(const std::string &path) const;
+		std::string	generateAutoindex(const std::string &path) const;
 };
 
 #endif

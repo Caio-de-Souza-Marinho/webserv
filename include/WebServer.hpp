@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <cstdint>
 #include "Client.hpp"
 #include "Server.hpp"
 
@@ -33,6 +34,8 @@ class	WebServer
 		void	handleCGI(Client &client);
 		void	closeClient(int fd);
 		void	checkTimeouts();
+		void	modifyEpoll(int fd, uint32_t events);
+		void	removeFromEpoll(int fd);
 };
 
 #endif

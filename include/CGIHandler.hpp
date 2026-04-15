@@ -17,8 +17,10 @@ class	CGIHandler
 
 	private:
 		std::vector<std::string>	buildEnv(const Request &request, const std::string &scriptPath, const Route &route) const;
-		char**				vecToEnvp(const std::vector<std::string> &env) const;
+		char**				buildEnvp(const std::vector<std::string> &env) const;
 		void				freeEnvp(char **envp) const;
+		char**				buildArgv(const std::string &interpreter, const std::string &scriptPath) const;
+		void				freeArgv(char **argv) const;
 };
 
 #endif

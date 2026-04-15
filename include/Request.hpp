@@ -13,6 +13,7 @@ class	Request
 		std::string				rawUri;
 		std::string				uri;
 		std::string				path;
+		std::string				host;
 		std::string				query;
 		std::string				version;
 		std::map<std::string, std::string>	headers;
@@ -20,6 +21,7 @@ class	Request
 		size_t					contentLength;
 		bool					isChunked;
 		bool					isComplete;
+		bool					keepAlive;
 
 		void	reset();
 };

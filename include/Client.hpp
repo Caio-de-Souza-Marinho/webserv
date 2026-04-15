@@ -34,8 +34,10 @@ class	Client
 		Server		*server;
 		RequestParser	*parser;
 		pid_t		cgiPid;
-		int		cgiFd;
+		int		cgiInputFd;
+		int		cgiOutputFd;
 		std::string	cgiBuffer;
+		bool		cgiDone;
 };
 
 #endif

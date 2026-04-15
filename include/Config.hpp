@@ -10,7 +10,7 @@ struct	Route
 {
 	std::string				path;
 	std::string				root;
-	std::string				index;
+	std::vector<std::string>		index;
 	std::set<std::string>			methods;
 	std::string				redirectUrl;
 	int					redirectCode;

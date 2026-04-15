@@ -15,7 +15,8 @@ class	Router
 		std::string	resolvePath(const Route &route, const Request &request) const;
 
 	private:
-		const Route*	findBestMatch(const std::string &path, const std::vector<Route> &routes) const;
+		const Route*		findBestMatch(const std::string &path, const std::vector<Route> &routes) const;
+		const std::string*	matchCGI(const Route &route, const std::string &path) const;
 };
 
 #endif
