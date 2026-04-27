@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <cstdint>
+#include <stdint.h>
 #include "Client.hpp"
 #include "Server.hpp"
 
