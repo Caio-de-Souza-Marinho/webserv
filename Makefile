@@ -12,7 +12,7 @@ TEST_FILE = config/default.conf
 SRCS	= ${SRC_DIR}main.cpp \
 
 
-OBJS	= ${SRCS:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.o}
+OBJS	= ${SRCS:${SRC_DIR}%.cpp=${OBJ_DIR}/%.o}
 
 all:		${NAME}
 
