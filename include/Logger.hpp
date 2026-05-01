@@ -2,7 +2,9 @@
 #define LOGGER_HPP
 
 #include <string>
+#include "../include/Colors.hpp"
 #include <iostream>
+#include <ctime>
 
 class	Logger
 {
@@ -26,6 +28,7 @@ class	Logger
 		static Level	_level;
 
 		static std::string	levelToString(Level level);
+		static std::string	levelToColor(Level level);
 };
 
 #endif

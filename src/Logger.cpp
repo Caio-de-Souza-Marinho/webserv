@@ -1,5 +1,4 @@
 #include "../include/Logger.hpp"
-#include <ctime>
 
 Logger::Level Logger::_level = Logger::DEBUG;
 
@@ -20,6 +19,23 @@ std::string	Logger::levelToString(Level level)
 	}
 }
 
+std::string	Logger::levelToColor(Level level)
+{
+	switch (level)
+	{
+		case DEBUG:
+			return (BOLD_CYAN);
+		case INFO:
+			return (BOLD_GREEN);
+		case WARNING:
+			return (BOLD_YELLOW);
+		case ERROR:
+			return (BOLD_RED);
+		default:
+			return (RESET);
+	}
+}
+
 void	Logger::log(Level level, const std::string &message)
 {
 	if (level < _level)
@@ -31,9 +47,20 @@ void	Logger::log(Level level, const std::string &message)
 
 	strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", tm_info);
 
-	std::cerr	<< "[" << timebuf << "] "
-			<< "[" << levelToString(level) << "] "
-			<< message << std::endl;
+	if (USE_COLOR)
+	{
+		std::cerr	<< "[" << timebuf << "] "
+				<< levelToColor(level)
+				<< "[" << levelToString(level) << "] "
+				<< RESET
+				<< message << std::endl;
+	}
+	else
+	{
+		std::cerr	<< "[" << timebuf << "] "
+				<< "[" << levelToString(level) << "] "
+				<< message << std::endl;
+	}
 }
 
 void	Logger::debug(const std::string &message)
