@@ -8,12 +8,11 @@ std::map<std::string, std::string> MimeTypes::initTypes()
 
 	// text
 	types[".html"]	= "text/html";
-	types[".htm"]	= "text/htm";
-	types[".css"]	= "text.css";
+	types[".htm"]	= "text/html";
+	types[".css"]	= "text/css";
 	types[".js"]	= "application/javascript";
 	types[".json"]	= "application/json";
 	types[".xml"]	= "application/xml";
-	types[".pdf"]	= "application/pdf";
 	types[".txt"]	= "text/plain";
 	types[".csv"]	= "text/csv";
 
