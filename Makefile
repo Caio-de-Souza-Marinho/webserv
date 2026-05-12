@@ -17,7 +17,9 @@ SRCS	= ${SRC_DIR}/main.cpp \
 	  ${SRC_DIR}/Mock-Config.cpp \
 	  ${SRC_DIR}/Response.cpp \
 	  ${SRC_DIR}/ResponseBuilder.cpp \
-	  ${SRC_DIR}/Router.cpp
+	  ${SRC_DIR}/Router.cpp \
+	  ${SRC_DIR}/Tester.cpp \
+	  ${SRC_DIR}/Router-Tester.cpp
 
 OBJS	= ${SRCS:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.o}
 
