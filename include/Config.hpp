@@ -38,4 +38,6 @@ struct	ServerConfig
 	{}
 };
 
+ServerConfig makeMockConfig();
+
 #endif
