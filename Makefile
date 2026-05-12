@@ -13,7 +13,11 @@ SRCS	= ${SRC_DIR}/main.cpp \
 	  ${SRC_DIR}/Logger.cpp \
 	  ${SRC_DIR}/MimeTypes.cpp \
 	  ${SRC_DIR}/Request.cpp \
-	  ${SRC_DIR}/RequestParser.cpp
+	  ${SRC_DIR}/RequestParser.cpp \
+	  ${SRC_DIR}/Mock-Config.cpp \
+	  ${SRC_DIR}/Response.cpp \
+	  ${SRC_DIR}/ResponseBuilder.cpp \
+	  ${SRC_DIR}/Router.cpp
 
 OBJS	= ${SRCS:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.o}
 
@@ -25,6 +29,9 @@ ${NAME}:	${OBJS}
 ${OBJ_DIR}/%.o:	${SRC_DIR}/%.cpp
 	@mkdir -p $(dir $@)
 	${CC} ${FLAGS} ${INCLUDES} -c $< -o $@
+
+test: ${NAME}
+	valgrind --leak-check=full --show-leak-kinds=all ./${NAME}
 
 clean:
 	rm -rf ${OBJ_DIR}

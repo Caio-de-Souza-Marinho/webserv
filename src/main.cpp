@@ -1,19 +1,25 @@
 #include "../include/WebServer.hpp"
 #include "../include/Request.hpp"
 #include "../include/RequestParser.hpp"
-#include <iostream>
+#include "../include/Config.hpp"
+#include "../include/Response.hpp"
+#include "../include/Colors.hpp"
 
+#include <iostream>
+/*
 int	main(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
 	std::cout << "hello world\n";
+	ServerConfig Config = makeMockConfig();
 	return (0);
 }
+*/
 
-/*
 void	printRequest(const Request &request)
 {
+	std::cout << "host:		" << request.host << "\n";
 	std::cout << "method:		" << request.method << "\n";
 	std::cout << "path:		" << request.path << "\n";
 	std::cout << "query:		" << request.query << "\n";
@@ -25,8 +31,9 @@ void	printRequest(const Request &request)
 	std::cout << "---\n";
 }
 
-int	main()
+void	testRequestParser(void)
 {
+
 	// test 1 - simple GET
 	{
 		RequestParser	parser;
@@ -94,7 +101,31 @@ int	main()
 		parser.parse(request, raw);
 		std::cout << "path " << request.path << "\n---\n"; // should be /my file.html
 	}
+}
 
+void	testResponseBuild()
+{
+	Response res;
+
+	res.statusCode = 404;
+	res.headers["Content-Type"] = "text/html";
+	res.body = "<h1>Not Found</h1>";
+
+	std::cout << res.build() << std::endl;
+}
+
+int	main()
+{
+	// make ServerConfig (Mock)
+	ServerConfig Config = makeMockConfig();
+
+	std::cout << "----------------------------" << std::endl;
+	std::cout << GREEN << "Test Resquest Parser: " << RESET << std::endl;
+	testRequestParser();
+	std::cout << "----------------------------" << std::endl;
+	std::cout << GREEN << "Test Response Build: " << RESET << std::endl;
+	testResponseBuild();
+	std::cout << "----------------------------" << std::endl;
 	return (0);
 }
-*/
+
