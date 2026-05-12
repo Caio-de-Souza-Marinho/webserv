@@ -12,6 +12,7 @@ TEST_FILE = config/default.conf
 SRCS	= ${SRC_DIR}/main.cpp \
 	  ${SRC_DIR}/Logger.cpp \
 	  ${SRC_DIR}/MimeTypes.cpp \
+	  ${SRC_DIR}/ConfigParser.cpp \
 	  ${SRC_DIR}/Request.cpp \
 	  ${SRC_DIR}/RequestParser.cpp
 
