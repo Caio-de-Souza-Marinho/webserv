@@ -12,6 +12,7 @@ void	testResponseBuild(void);
 void	testResolvePath(void);
 void	testRouterMatch(void);
 void	testRouterMethods(void);
+void makeTesteBuildResponse(void);
 /*
 int	main(int argc, char **argv)
 {
@@ -37,16 +38,16 @@ int	main()
 	testResponseBuild();
 	std::cout << "----------------------------" << std::endl;
 
-	std::cout << GREEN << "Test Resolve Path: " << RESET << std::endl;
-	testResolvePath();
-	std::cout << "----------------------------" << std::endl;
-
 	std::cout << GREEN << "Test Router Match: " << RESET << std::endl;
 	testRouterMatch();
 	std::cout << "----------------------------" << std::endl;
 
 	std::cout << GREEN << "Test Router Methods: " << RESET << std::endl;
 	testRouterMethods();
+	std::cout << "----------------------------" << std::endl;
+
+	std::cout << GREEN << "Test Response Builder: " << RESET << std::endl;
+	makeTesteBuildResponse();
 	std::cout << "----------------------------" << std::endl;
 	return (0);
 }

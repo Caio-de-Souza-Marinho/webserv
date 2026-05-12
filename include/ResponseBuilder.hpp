@@ -2,6 +2,7 @@
 #define RESPONSEBUILDER_HPP
 
 #include <string>
+#include <sys/stat.h>
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Config.hpp"

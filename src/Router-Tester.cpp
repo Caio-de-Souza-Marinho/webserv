@@ -6,7 +6,7 @@
 /*   By: marcudos <marcudos@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/12 17:51:47 by marcudos          #+#    #+#             */
-/*   Updated: 2026/05/12 18:00:07 by marcudos         ###   ########.fr       */
+/*   Updated: 2026/05/12 19:16:16 by marcudos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include "../include/Config.hpp"
 #include "../include/Response.hpp"
 #include "../include/Router.hpp"
+#include "../include/ResponseBuilder.hpp"
 #include "../include/Colors.hpp"
 
 #include <iostream>
@@ -52,6 +53,7 @@ void	testResolvePath(void)
 	printResolvePath("/upload");
 }
 
+// -- Tester Router match
 void	printRouteMatch(const std::string &path)
 {
 	ServerConfig	config = makeMockConfig();
@@ -90,6 +92,7 @@ void	testRouterMatch(void)
 	printRouteMatch("/not-found.html");
 }
 
+// -- Tester Router methods
 void	testRouterMethods(void)
 {
 	ServerConfig	config = makeMockConfig();
@@ -113,4 +116,39 @@ void	testRouterMethods(void)
 	std::cout << "POST:   " << router.isMethodAllowed(*route, "POST") << "\n";
 	std::cout << "DELETE: " << router.isMethodAllowed(*route, "DELETE") << "\n";
 	std::cout << "PUT:    " << router.isMethodAllowed(*route, "PUT") << "\n";
+}
+
+void	testBuildResponse(const std::string &method, const std::string &path)
+{
+	ServerConfig		config = makeMockConfig();
+	Request			req;
+	Router			router;
+	ResponseBuilder	builder;
+	const Route		*route;
+	Response		res;
+
+	req.method = method;
+	req.path = path;
+	req.version = "HTTP/1.1";
+	req.isComplete = true;
+
+	route = router.matchRoute(req, config);
+	res = builder.buildResponse(req, route, config);
+
+	std::cout << "\n========== " << method << " " << path << " ==========\n";
+	if (route)
+		std::cout << "matched route: " << route->path << "\n";
+	else
+		std::cout << "matched route: NULL\n";
+	std::cout << res.build() << "\n";
+}
+
+void makeTesteBuildResponse(void)
+{
+	testBuildResponse("GET", "/index.html");
+	testBuildResponse("GET", "/not-found.html");
+	testBuildResponse("GET", "/uploads");
+	testBuildResponse("GET", "/old");
+	testBuildResponse("POST", "/uploads");
+	testBuildResponse("DELETE", "/uploads/test.txt");
 }
