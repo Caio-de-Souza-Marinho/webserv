@@ -1,27 +1,12 @@
 #include "../../include/ResponseBuilder.hpp"
 #include "../../include/Router.hpp"
+#include <cctype>
+#include <cstddef>
+#include <unistd.h>
+#include <ctime>
 
-Response ResponseBuilder::handleError(int statusCode, const ServerConfig &config)
-{
-	Response	res;
-	std::map<int, std::string>::const_iterator it;
 
-	res.statusCode = statusCode;
-	res.headers["Content-Type"] = "text/html";
-
-	it = config.errorPages.find(statusCode);
-	if (it != config.errorPages.end() && fileExists(it->second))
-	{
-		res.body = readFile(it->second);
-		return (res);
-	}
-	res.body = "<html><body><h1>";
-	res.body += Response::getStatusMessage(statusCode);
-	res.body += "</h1></body></html>";
-	return (res);
-}
-
-Response ResponseBuilder::handleRedirect(const Route &route)
+Response 	ResponseBuilder::handleRedirect(const Route &route)
 {
 	Response	res;
 
@@ -31,58 +16,81 @@ Response ResponseBuilder::handleRedirect(const Route &route)
 	return (res);
 }
 
-Response	ResponseBuilder::handleGET(const Request &request, const Route &route)
+Response	ResponseBuilder::handleGET(const Request &request, const Route &route, const ServerConfig &config)
 {
-	Response	res;
-	Router	router;
+	Router		router;
 	std::string	path;
 
 	path = router.resolvePath(route, request);
 	if (!fileExists(path))
-	{
-		res.statusCode = 404;
-		res.headers["Content-Type"] = "text/html";
-		res.body = "<html><body><h1>404 Not Found</h1></body></html>";
-		return (res);
-	}
+		return (handleError(404, config));
 	if (isDirectory(path))
 	{
-		res.statusCode = 403;
-		res.headers["Content-Type"] = "text/html";
-		res.body = "<html><body><h1>403 Forbidden</h1></body></html>";
-		return (res);
+		return (handleDirectory(path, route, config));
 	}
-	res.statusCode = 200;
-	res.headers["Content-Type"] = getContentType(path);
-	res.body = readFile(path);
-	return (res);
+	if (!isFileReadable(path))
+		return (handleError(403, config));
+	return (buildSimpleResponse(200, getContentType(path), readFile(path)));
 }
 
 // stubs handles
 Response	ResponseBuilder::handlePOST(const Request &request,
-	const Route &route)
+	const Route &route, const ServerConfig &config)
 {
-	(void)request;
-	(void)route;
-
+	std::string	fileName;
+	std::string	filePath;
 	Response	res;
 
-	res.statusCode = 501;
-	res.headers["Content-Type"] = "text/html";
-	res.body = "<html><body><h1>501 Not Implemented</h1></body></html>";
+	if (route.uploadPath.empty())
+		return (handleError(403, config));
+	if (!fileExists(route.uploadPath) || !isDirectory(route.uploadPath))
+		return (handleError(500, config));
+
+	fileName = extractUploadFilename(request);
+	if (fileName.empty())
+		fileName = generateUploadFilename();
+
+	filePath = joinPath(route.uploadPath, fileName);
+	if (!writeFile(filePath, request.body))
+		return (handleError(500, config));
+
+	res.statusCode = 201;
+	res.headers["Content-Type"] = "text/plain";
+	res.headers["Location"] = filePath;
+	res.body = "File uploaded";
 	return (res);
 }
 
-Response	ResponseBuilder::handleDELETE(const Request &request,
-	const Route &route)
+Response	ResponseBuilder::handleDELETE(const Request &request, const Route &route, const ServerConfig &config)
 {
-	(void)request;
-	(void)route;
+	Router		router;
+	std::string	path;
 
-	Response	res;
+	path = router.resolvePath(route, request);
+	if (!fileExists(path))
+		handleError(404, config);
+	if (isDirectory(path))
+		handleError(403, config);
+	if (unlink(path.c_str()) != 0)
+		handleError(500, config);
+	return (buildSimpleResponse(204, "", ""));
+}
 
-	res.statusCode = 501;
-	res.headers["Content-Type"] = "text/html";
-	res.body = "<html><body><h1>501 Not Implemented</h1></body></html>";
-	return (res);
+Response	ResponseBuilder::handleDirectory(const std::string &path, const Route &route, const ServerConfig &config)
+{
+	std::string indexPath;
+	std::string dirPath;
+
+	dirPath = path;
+	if (!dirPath.empty() && dirPath[dirPath.size() - 1] != '/')
+		dirPath += "/";
+	for (size_t i = 0; i < route.index.size(); i++)
+	{
+		indexPath = dirPath + route.index[i];
+		if (fileExists(indexPath) && !isDirectory(indexPath) && isFileReadable(indexPath))
+			return (buildSimpleResponse(200, getContentType(indexPath), readFile(indexPath)));
+	}
+	if (route.autoindex)
+		return (buildSimpleResponse(200, "text/html", generateAutoindex(dirPath)));
+	return (handleError(403, config));
 }

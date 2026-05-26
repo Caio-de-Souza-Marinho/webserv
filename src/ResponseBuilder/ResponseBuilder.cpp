@@ -27,13 +27,13 @@ Response ResponseBuilder::buildResponse(const Request &request,
 		return (handleError(405, config));
 
 	if (request.method == "GET")
-		return (handleGET(request, *route));
+		return (handleGET(request, *route, config));
 
 	if (request.method == "POST")
-		return (handlePOST(request, *route));
+		return (handlePOST(request, *route, config));
 
 	if (request.method == "DELETE")
-		return (handleDELETE(request, *route));
+		return (handleDELETE(request, *route, config));
 
 	return (handleError(501, config));
 }
@@ -43,7 +43,3 @@ Response ResponseBuilder::buildErrorResponse(int code, const ServerConfig &confi
 {
 	return (handleError(code, config));
 }
-
-// handles
-
-
