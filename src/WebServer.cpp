@@ -21,7 +21,8 @@ void	WebServer::modifyEpoll(int fd, uint32_t events)
 
 void	WebServer::removeFromEpoll(int fd)
 {
-	epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+	if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
+		Logger::error("epoll_ctl DEL failed");
 }
 
 void	WebServer::setNonBlocking(int fd)
@@ -240,6 +241,9 @@ void	WebServer::handleRequest(Client &client)
 
 void	WebServer::writeClient(int fd)
 {
+	if (!clients.count(fd))
+		return ;
+
 	Client	&client = clients[fd];
 
 	while (client.writeOffset < client.writeBuffer.size())
@@ -279,6 +283,7 @@ void	WebServer::closeClient(int fd)
 	std::map<int, Client>::iterator	it = clients.find(fd);
 
 	removeFromEpoll(fd);
+	clients.erase(it);
 	close(fd);
 
 	if (it == clients.end())
@@ -292,8 +297,6 @@ void	WebServer::closeClient(int fd)
 
 	if (it->second.cgiOutputFd != -1)
 		close(it->second.cgiOutputFd);
-
-	clients.erase(it);
 }
 
 void	WebServer::checkTimeouts()
