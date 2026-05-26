@@ -5,6 +5,17 @@
 #include <map>
 #include <string>
 #include <stdint.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstring>
+#include <stdexcept>
+#include <sstream>
+#include <cerrno>
+
 #include "Client.hpp"
 #include "Server.hpp"
 
@@ -16,6 +27,7 @@ class	WebServer
 {
 	public:
 		WebServer(const std::string &configPath);
+		~WebServer();
 		void run();
 
 	private:
@@ -27,15 +39,17 @@ class	WebServer
 		ResponseBuilder			*responseBuilder;
 		CGIHandler			*cgiHandler;
 
-		void	acceptClient(int serverFd);
-		void	readClient(int fd);
-		void	writeClient(int fd);
-		void	handleRequest(Client &client);
-		void	handleCGI(Client &client);
-		void	closeClient(int fd);
-		void	checkTimeouts();
-		void	modifyEpoll(int fd, uint32_t events);
-		void	removeFromEpoll(int fd);
+		void		acceptClient(int serverFd);
+		void		readClient(int fd);
+		void		writeClient(int fd);
+		void		handleRequest(Client &client);
+		void		handleCGI(Client &client);
+		void		closeClient(int fd);
+		void		checkTimeouts();
+		void		modifyEpoll(int fd, uint32_t events);
+		void		removeFromEpoll(int fd);
+		void		setNonBlocking(int fd);
+		std::string	intToStr(int n);
 };
 
 #endif
