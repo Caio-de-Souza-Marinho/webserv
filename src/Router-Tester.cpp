@@ -17,6 +17,7 @@
 #include "../include/Response.hpp"
 #include "../include/Router.hpp"
 #include "../include/ResponseBuilder.hpp"
+#include "../include/ConfigParser.hpp"
 #include "../include/Colors.hpp"
 
 #include <iostream>
@@ -95,7 +96,9 @@ void	testRouterMatch(void)
 // -- Tester Router methods
 void	testRouterMethods(void)
 {
-	ServerConfig	config = makeMockConfig();
+	ConfigParser	parser("./config/default.conf");
+	std::vector<ServerConfig> servers = parser.parse();
+	ServerConfig	config = servers[0];
 	Router		router;
 	const Route	*route;
 	Request		req;
