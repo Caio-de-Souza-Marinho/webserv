@@ -20,7 +20,12 @@ SRCS	= ${SRC_DIR}/main.cpp \
 	  ${SRC_DIR}/ResponseBuilder.cpp \
 	  ${SRC_DIR}/Router.cpp \
 	  ${SRC_DIR}/Tester.cpp \
-	  ${SRC_DIR}/Router-Tester.cpp
+	  ${SRC_DIR}/Router-Tester.cpp \
+	  ${SRC_DIR}/WebServer.cpp \
+	  ${SRC_DIR}/WebServer-Init.cpp \
+	  ${SRC_DIR}/Client.cpp \
+	  ${SRC_DIR}/Server.cpp \
+	  ${SRC_DIR}/CGIHandler.cpp \
 
 OBJS	= ${SRCS:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.o}
 

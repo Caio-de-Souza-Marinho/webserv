@@ -1,18 +1,37 @@
 #include "../include/WebServer.hpp"
+#include "../include/Logger.hpp"
 #include "../include/Request.hpp"
 #include "../include/RequestParser.hpp"
 #include "../include/Config.hpp"
 #include "../include/Response.hpp"
 #include "../include/Router.hpp"
 #include "../include/Colors.hpp"
-#include <iostream>
 
-void	testRequestParser(void);
-void	testResponseBuild(void);
-void	testResolvePath(void);
-void	testRouterMatch(void);
-void	testRouterMethods(void);
-void makeTesteBuildResponse(void);
+#include <iostream>
+#include <exception>
+
+int	main(int argc, char **argv)
+{
+	if (argc != 2)
+	{
+		std::cerr << "Usage: ./webserv <config_file>" << std::endl;
+		return (1);
+	}
+
+	try
+	{
+		WebServer	server(argv[1]);
+		server.run();
+	}
+	catch (const std::exception &e)
+	{
+		Logger::error(e.what());
+		return (1);
+	}
+
+	return (0);
+}
+
 /*
 int	main(int argc, char **argv)
 {
@@ -22,7 +41,13 @@ int	main(int argc, char **argv)
 	ServerConfig Config = makeMockConfig();
 	return (0);
 }
-*/
+
+void	testRequestParser(void);
+void	testResponseBuild(void);
+void	testResolvePath(void);
+void	testRouterMatch(void);
+void	testRouterMethods(void);
+void makeTesteBuildResponse(void);
 
 int	main()
 {
@@ -51,4 +76,4 @@ int	main()
 	std::cout << "----------------------------" << std::endl;
 	return (0);
 }
-
+*/
