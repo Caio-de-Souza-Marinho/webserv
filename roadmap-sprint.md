@@ -77,7 +77,7 @@ Implementar os handlers HTTP que faltam em `ResponseBuilder`, enforçar o limite
 ### O que implementar
 
 **`Response.cpp`**
-- [ ] Corrigir `"Content-Lenght"` → `"Content-Length"` no método `build()`
+- [x] Corrigir `"Content-Lenght"` → `"Content-Length"` no método `build()`
 
 **`ResponseBuilder.cpp` — `handlePOST`**
 - [ ] Se `route.uploadPath` estiver vazio → 403

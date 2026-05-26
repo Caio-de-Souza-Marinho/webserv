@@ -18,13 +18,13 @@ Response::Response() : statusCode(200) {}
 std::string Response::build() const
 {
 	std::ostringstream response;
-	std::ostringstream lenght;
+	std::ostringstream length;
 	std::map<std::string, std::string> finalHeaders;
 	std::map<std::string, std::string>::const_iterator it;
 
 	finalHeaders = headers;
-	lenght << body.size();
-	finalHeaders["Content-Lenght"] = lenght.str();
+	length << body.size();
+	finalHeaders["Content-Length"] = length.str();
 	if (finalHeaders.find("Content-Type") == finalHeaders.end() && !body.empty())
 		finalHeaders["Content-Type"] = "text/html";
 
