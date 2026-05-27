@@ -80,11 +80,11 @@ std::string	ResponseBuilder::generateAutoindex(const std::string &path) const
 		body += entry->d_name;
 		body += "\">";
 		if (entry->d_type == DT_DIR)
-			body += "📁 ";
+			body += "&#128193; ";
 		if (entry->d_type == DT_LNK)
-			body += "🔗 ";
+			body += "&#128279; ";
 		if (entry->d_type == DT_UNKNOWN)
-			body += "� ";
+			body += "&#8226; ";
 		body += entry->d_name;
 		body += "</a></li>";
 	}

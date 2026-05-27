@@ -57,7 +57,7 @@ Response	ResponseBuilder::handlePOST(const Request &request,
 	res.statusCode = 201;
 	res.headers["Content-Type"] = "text/plain";
 	res.headers["Location"] = filePath;
-	res.body = "File uploaded";
+	res.body = "File uploaded\n";
 	return (res);
 }
 
@@ -68,11 +68,11 @@ Response	ResponseBuilder::handleDELETE(const Request &request, const Route &rout
 
 	path = router.resolvePath(route, request);
 	if (!fileExists(path))
-		handleError(404, config);
+		return (handleError(404, config));
 	if (isDirectory(path))
-		handleError(403, config);
+		return (handleError(403, config));
 	if (unlink(path.c_str()) != 0)
-		handleError(500, config);
+		return (handleError(500, config));
 	return (buildSimpleResponse(204, "", ""));
 }
 
