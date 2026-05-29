@@ -16,17 +16,18 @@ bool	 ResponseBuilder::fileExists(const std::string &path) const
 	return (stat(path.c_str(), &info) == 0);
 }
 
-std::string 	ResponseBuilder::readFile(const std::string &path) const
+bool 	ResponseBuilder::readFile(const std::string &path, std::string &out) const
 {
 	std::ifstream		file;
 	std::ostringstream	buffer;
 
 	file.open(path.c_str(), std::ios::in | std::ios::binary);
 	if (!file.is_open())
-		return ("");
+		return (false);
 	buffer << file.rdbuf();
 	file.close();
-	return (buffer.str());
+	out = buffer.str();
+	return (true);
 }
 
 bool	ResponseBuilder::isDirectory(const std::string &path) const
@@ -55,13 +56,6 @@ Response	ResponseBuilder::buildSimpleResponse(int statusCode, const std::string 
 	return (res);
 }
 
-bool	ResponseBuilder::isFileReadable(const std::string &path) const
-{
-	std::ifstream	file(path.c_str(), std::ios::in | std::ios::binary);
-
-	return (file.is_open());
-}
-
 std::string	ResponseBuilder::generateAutoindex(const std::string &fsPath, const std::string &urlPath) const
 {
 	DIR		*dir;
@@ -77,9 +71,6 @@ std::string	ResponseBuilder::generateAutoindex(const std::string &fsPath, const 
 	while ((entry = readdir(dir)) != NULL)
 	{
 		body += "<li><a href=\"";
-	//	body += urlPath;
-	//	body += "/";
-	//	body += entry->d_name;
 		body += joinPath(urlPath, entry->d_name);
 		body += "\">";
 		if (entry->d_type == DT_DIR)

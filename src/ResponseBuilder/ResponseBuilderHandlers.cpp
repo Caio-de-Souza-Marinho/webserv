@@ -20,17 +20,16 @@ Response	ResponseBuilder::handleGET(const Request &request, const Route &route, 
 {
 	Router		router;
 	std::string	path;
+	std::string	body;
 
 	path = router.resolvePath(route, request);
 	if (!fileExists(path))
 		return (handleError(404, config));
 	if (isDirectory(path))
-	{
 		return (handleDirectory(path, request.path, route, config));
-	}
-	if (!isFileReadable(path))
+	if (!readFile(path, body))
 		return (handleError(403, config));
-	return (buildSimpleResponse(200, getContentType(path), readFile(path)));
+	return (buildSimpleResponse(200, getContentType(path), body));
 }
 
 // stubs handles
@@ -80,6 +79,7 @@ Response	ResponseBuilder::handleDirectory(const std::string &fsPath, const std::
 {
 	std::string indexPath;
 	std::string dirPath;
+	std::string body;
 
 	dirPath = fsPath;
 	if (!dirPath.empty() && dirPath[dirPath.size() - 1] != '/')
@@ -87,8 +87,8 @@ Response	ResponseBuilder::handleDirectory(const std::string &fsPath, const std::
 	for (size_t i = 0; i < route.index.size(); i++)
 	{
 		indexPath = dirPath + route.index[i];
-		if (fileExists(indexPath) && !isDirectory(indexPath) && isFileReadable(indexPath))
-			return (buildSimpleResponse(200, getContentType(indexPath), readFile(indexPath)));
+		if (fileExists(indexPath) && !isDirectory(indexPath) && readFile(indexPath, body))
+			return (buildSimpleResponse(200, getContentType(indexPath), body));
 	}
 	if (route.autoindex)
 		return (buildSimpleResponse(200, "text/html", generateAutoindex(dirPath, urlPath)));

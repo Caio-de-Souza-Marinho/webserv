@@ -23,8 +23,7 @@ class	ResponseBuilder
 		Response	handleRedirect(const Route &route);
 		Response	handleError(int statusCode, const ServerConfig &config);
 		bool		fileExists(const std::string &path) const;
-		bool		isFileReadable(const std::string &path) const;
-		std::string	readFile(const std::string &path) const;
+		bool		readFile(const std::string &path, std::string &out) const;
 		std::string	getContentType(const std::string &path) const;
 		bool		isDirectory(const std::string &path) const;
 		std::string	generateAutoindex(const std::string &fsPath, const std::string &urlPath) const;
