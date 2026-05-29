@@ -19,7 +19,7 @@ class	ResponseBuilder
 		Response	handleGET(const Request &request, const Route &route, const ServerConfig &config);
 		Response	handlePOST(const Request &request, const Route &route, const ServerConfig &config);
 		Response	handleDELETE(const Request &request, const Route &route, const ServerConfig &config);
-		Response	handleDirectory(const std::string &path, const Route &route, const ServerConfig &config);
+		Response	handleDirectory(const std::string &fsPath, const std::string &urlPath, const Route &route, const ServerConfig &config);
 		Response	handleRedirect(const Route &route);
 		Response	handleError(int statusCode, const ServerConfig &config);
 		bool		fileExists(const std::string &path) const;
@@ -27,7 +27,7 @@ class	ResponseBuilder
 		std::string	readFile(const std::string &path) const;
 		std::string	getContentType(const std::string &path) const;
 		bool		isDirectory(const std::string &path) const;
-		std::string	generateAutoindex(const std::string &path) const;
+		std::string	generateAutoindex(const std::string &fsPath, const std::string &urlPath) const;
 		std::string	buildDefaultErrorBody(int statusCode) const;
 		Response	buildSimpleResponse(int statusCode, const std::string &contentType, const std::string &body) const;
 		std::string	joinPath(const std::string &dir, const std::string &file) const;

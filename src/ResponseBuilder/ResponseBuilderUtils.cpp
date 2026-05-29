@@ -62,22 +62,25 @@ bool	ResponseBuilder::isFileReadable(const std::string &path) const
 	return (file.is_open());
 }
 
-std::string	ResponseBuilder::generateAutoindex(const std::string &path) const
+std::string	ResponseBuilder::generateAutoindex(const std::string &fsPath, const std::string &urlPath) const
 {
 	DIR		*dir;
 	struct dirent	*entry;
 	std::string	body;
 
-	dir = opendir(path.c_str());
+	dir = opendir(fsPath.c_str());
 	if (dir == NULL)
 		return (buildDefaultErrorBody(403));
 	body = "<html><body><h1>Index of ";
-	body += path;
+	body += fsPath;
 	body += "</h1><ul>";
 	while ((entry = readdir(dir)) != NULL)
 	{
 		body += "<li><a href=\"";
-		body += entry->d_name;
+	//	body += urlPath;
+	//	body += "/";
+	//	body += entry->d_name;
+		body += joinPath(urlPath, entry->d_name);
 		body += "\">";
 		if (entry->d_type == DT_DIR)
 			body += "&#128193; ";

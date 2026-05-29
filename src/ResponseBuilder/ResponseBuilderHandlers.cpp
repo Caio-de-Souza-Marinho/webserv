@@ -26,7 +26,7 @@ Response	ResponseBuilder::handleGET(const Request &request, const Route &route, 
 		return (handleError(404, config));
 	if (isDirectory(path))
 	{
-		return (handleDirectory(path, route, config));
+		return (handleDirectory(path, request.path, route, config));
 	}
 	if (!isFileReadable(path))
 		return (handleError(403, config));
@@ -76,12 +76,12 @@ Response	ResponseBuilder::handleDELETE(const Request &request, const Route &rout
 	return (buildSimpleResponse(204, "", ""));
 }
 
-Response	ResponseBuilder::handleDirectory(const std::string &path, const Route &route, const ServerConfig &config)
+Response	ResponseBuilder::handleDirectory(const std::string &fsPath, const std::string &urlPath, const Route &route, const ServerConfig &config)
 {
 	std::string indexPath;
 	std::string dirPath;
 
-	dirPath = path;
+	dirPath = fsPath;
 	if (!dirPath.empty() && dirPath[dirPath.size() - 1] != '/')
 		dirPath += "/";
 	for (size_t i = 0; i < route.index.size(); i++)
@@ -91,6 +91,6 @@ Response	ResponseBuilder::handleDirectory(const std::string &path, const Route &
 			return (buildSimpleResponse(200, getContentType(indexPath), readFile(indexPath)));
 	}
 	if (route.autoindex)
-		return (buildSimpleResponse(200, "text/html", generateAutoindex(dirPath)));
+		return (buildSimpleResponse(200, "text/html", generateAutoindex(dirPath, urlPath)));
 	return (handleError(403, config));
 }
