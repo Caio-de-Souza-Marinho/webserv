@@ -3,6 +3,7 @@
 #include "../include/RequestParser.hpp"
 #include "../include/Router.hpp"
 #include "../include/ResponseBuilder.hpp"
+#include "../include/CGIHandler.hpp"
 #include <cerrno>
 
 #define	MAX_EVENTS	64
@@ -77,27 +78,10 @@ void	WebServer::run()
 				continue ;
 			}
 
-			// error or hangup on a client/CGI fd
-			if (ev & (EPOLLERR | EPOLLHUP))
-			{
-				// if it's a CGI pipe, let handleCGI deal with it (EOF)
-				// otherwise close the client
-				if (clients.count(fd))
-				{
-					Client	&client = clients[fd];
-					if (client.state == CGI_RUNNING)
-						handleCGI(client);
-					else
-						closeClient(fd);
-				}
-				else
-					closeClient(fd);
-				continue ;
-			}
-
-			// CGI Pipe events
-			// cgiOutputFd and cgiInputFd are not keys in 'clients'
-			// we find the owning client by scanning
+			// CGI pipe event? cgiOutputFd / cgiInputFd are not keys in 'clients',
+			// so we find the owning client by scanning. This MUST come before the
+			// generic EPOLLHUP handling below: a finished CGI hangs up its pipe,
+			// and we want handleCGI() to read the final bytes / detect EOF.
 			{
 				bool	isCgiFd = false;
 				for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
@@ -112,6 +96,13 @@ void	WebServer::run()
 				}
 				if (isCgiFd)
 					continue ;
+			}
+
+			// error or hangup on a regular client fd
+			if (ev & (EPOLLERR | EPOLLHUP))
+			{
+				closeClient(fd);
+				continue ;
 			}
 
 			// regular client fd
@@ -214,7 +205,6 @@ void	WebServer::readClient(int fd)
 		handleRequest(client);
 }
 
-// skipping CGI integration temporarily
 void	WebServer::handleRequest(Client &client)
 {
 	const Route	*route;
@@ -225,6 +215,29 @@ void	WebServer::handleRequest(Client &client)
 	if (route && !router->isMethodAllowed(*route, client.request.method))
 	{
 		response = responseBuilder->buildErrorResponse(405, client.server->config);
+	}
+	else if (route)
+	{
+		// Is this request for a CGI script (path ends with a configured extension)?
+		const std::string	*interpreter = router->matchCGI(*route, client.request.path);
+		if (interpreter)
+		{
+			std::string	scriptPath = router->resolvePath(*route, client.request);
+
+			if (access(scriptPath.c_str(), F_OK) != 0)
+				response = responseBuilder->buildErrorResponse(404, client.server->config);
+			else if (cgiHandler->execute(client, scriptPath, *interpreter))
+			{
+				// CGI forked successfully: hand the pipes over to epoll and
+				// let handleCGI() drive it. Nothing to write yet.
+				registerCgi(client);
+				return ;
+			}
+			else
+				response = responseBuilder->buildErrorResponse(500, client.server->config);
+		}
+		else
+			response = responseBuilder->buildResponse(client.request, route, client.server->config);
 	}
 	else
 	{
@@ -281,22 +294,35 @@ void	WebServer::writeClient(int fd)
 void	WebServer::closeClient(int fd)
 {
 	std::map<int, Client>::iterator	it = clients.find(fd);
-
-	removeFromEpoll(fd);
-	clients.erase(it);
-	close(fd);
-
 	if (it == clients.end())
 		return ;
 
-	if (it->second.parser)
-		delete it->second.parser;
+	Client	&client = it->second;
 
-	if (it->second.cgiInputFd != -1)
-		close(it->second.cgiInputFd);
+	// clean up everything *inside* the Client while the iterator is still valid
+	if (client.parser)
+		delete client.parser;
 
-	if (it->second.cgiOutputFd != -1)
-		close(it->second.cgiOutputFd);
+	// if a CGI was still running, reap the child so it doesn't become a zombie
+	if (client.cgiPid != -1)
+	{
+		kill(client.cgiPid, SIGKILL);
+		waitpid(client.cgiPid, NULL, 0);
+	}
+	if (client.cgiInputFd != -1)
+	{
+		removeFromEpoll(client.cgiInputFd);
+		close(client.cgiInputFd);
+	}
+	if (client.cgiOutputFd != -1)
+	{
+		removeFromEpoll(client.cgiOutputFd);
+		close(client.cgiOutputFd);
+	}
+
+	removeFromEpoll(fd);
+	close(fd);
+	clients.erase(it);	// erase last: the iterator is dead afterwards
 }
 
 void	WebServer::checkTimeouts()
@@ -308,16 +334,18 @@ void	WebServer::checkTimeouts()
 	{
 		Client	&client = it->second;
 
+		// A CGI that runs too long gets killed and answered with 504.
+		if (client.state == CGI_RUNNING)
+		{
+			if (now - client.lastActivity > 10)
+				handleCgiTimeout(client);
+			continue ;
+		}
+
 		if (now - client.lastActivity > 30)
 			toClose.push_back(client.fd);
 	}
 
 	for (size_t i = 0; i < toClose.size(); i++)
 		closeClient(toClose[i]);
-}
-
-// only for the compile to work - for now
-void	WebServer::handleCGI(Client &client)
-{
-	(void)client;
 }
