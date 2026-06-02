@@ -4,8 +4,8 @@ Request::Request() :
 	contentLength(0),
 	isChunked(false),
 	isComplete(false),
-	errorCode(0),
-	keepAlive(false)
+	keepAlive(false),
+	errorCode(0)
 {}
 
 void	Request::reset()
