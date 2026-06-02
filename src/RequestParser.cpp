@@ -1,5 +1,6 @@
 #include "../include/RequestParser.hpp"
 #include "../include/Logger.hpp"
+#include <cstddef>
 #include <sstream>
 #include <algorithm>
 
@@ -20,8 +21,9 @@ void	RequestParser::reset()
 	readChunkSize = true;
 }
 
-RequestParser::State	RequestParser::parse(Request &request, std::string &buffer)
+RequestParser::State	RequestParser::parse(Request &request, std::string &buffer, size_t maxBodySize)
 {
+	this->maxBodySize = maxBodySize;
 	while (state != COMPLETE)
 	{
 		if (state == REQUEST_LINE)

@@ -208,7 +208,7 @@ void	WebServer::readClient(int fd)
 	}
 
 	RequestParser::State	state;
-	state = client.parser->parse(client.request, client.readBuffer);
+	state = client.parser->parse(client.request, client.readBuffer, client.server->config.maxBodySize);
 
 	if (state == RequestParser::COMPLETE)
 		handleRequest(client);

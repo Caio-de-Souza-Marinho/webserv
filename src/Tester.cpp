@@ -47,7 +47,7 @@ void	testRequestParser(void)
 			"Host: localhost:8080\r\n"
 			"Connection: keep-alive\r\n"
 			"\r\n";
-		parser.parse(request, raw);
+		parser.parse(request, raw, 1000);
 		printRequest(request);
 	}
 
@@ -61,7 +61,7 @@ void	testRequestParser(void)
 			"Content-Length: 11\r\n"
 			"\r\n"
 			"hello world";
-		parser.parse(request, raw);
+		parser.parse(request, raw, 100);
 		printRequest(request);
 	}
 
@@ -77,7 +77,7 @@ void	testRequestParser(void)
 			"5\r\nhello\r\n"
 			"6\r\n world\r\n"
 			"0\r\n\r\n";
-		parser.parse(request, raw);
+		parser.parse(request, raw, 1000);
 		printRequest(request);	// body should be hello world
 	}
 
@@ -87,10 +87,10 @@ void	testRequestParser(void)
 		Request		request;
 		std::string	buffer = "GET /page HTTP/1.1\r\nHost: local";
 		std::string	part2 = "host\r\n\r\n";
-		parser.parse(request, buffer);
+		parser.parse(request, buffer, 1000);
 		std::cout << "after part1 complete: " << request.isComplete << "\n";
 		buffer += "host\r\n\r\n";
-		parser.parse(request, buffer);
+		parser.parse(request, buffer, 1000);
 		std::cout << "after part2 complete: " << request.isComplete << "\n---\n";
 	}
 
@@ -102,7 +102,7 @@ void	testRequestParser(void)
 			"GET /my%20file.html HTTP/1.1\r\n"
 			"Host: localhost\r\n"
 			"\r\n";
-		parser.parse(request, raw);
+		parser.parse(request, raw, 1000);
 		std::cout << "path " << request.path << "\n---\n"; // should be /my file.html
 	}
 }
