@@ -20,17 +20,16 @@ Response	ResponseBuilder::handleGET(const Request &request, const Route &route, 
 {
 	Router		router;
 	std::string	path;
+	std::string	body;
 
 	path = router.resolvePath(route, request);
 	if (!fileExists(path))
 		return (handleError(404, config));
 	if (isDirectory(path))
-	{
-		return (handleDirectory(path, route, config));
-	}
-	if (!isFileReadable(path))
+		return (handleDirectory(path, request.path, route, config));
+	if (!readFile(path, body))
 		return (handleError(403, config));
-	return (buildSimpleResponse(200, getContentType(path), readFile(path)));
+	return (buildSimpleResponse(200, getContentType(path), body));
 }
 
 // stubs handles
@@ -49,6 +48,8 @@ Response	ResponseBuilder::handlePOST(const Request &request,
 	fileName = extractUploadFilename(request);
 	if (fileName.empty())
 		fileName = generateUploadFilename();
+	if (!isSafeFilename(fileName))
+		return (handleError(400, config));
 
 	filePath = joinPath(route.uploadPath, fileName);
 	if (!writeFile(filePath, request.body))
@@ -69,28 +70,29 @@ Response	ResponseBuilder::handleDELETE(const Request &request, const Route &rout
 	path = router.resolvePath(route, request);
 	if (!fileExists(path))
 		return (handleError(404, config));
-	if (isDirectory(path))
+	if (isDirectory(path) || !(isParentWritable(path)))
 		return (handleError(403, config));
 	if (unlink(path.c_str()) != 0)
 		return (handleError(500, config));
 	return (buildSimpleResponse(204, "", ""));
 }
 
-Response	ResponseBuilder::handleDirectory(const std::string &path, const Route &route, const ServerConfig &config)
+Response	ResponseBuilder::handleDirectory(const std::string &fsPath, const std::string &urlPath, const Route &route, const ServerConfig &config)
 {
 	std::string indexPath;
 	std::string dirPath;
+	std::string body;
 
-	dirPath = path;
+	dirPath = fsPath;
 	if (!dirPath.empty() && dirPath[dirPath.size() - 1] != '/')
 		dirPath += "/";
 	for (size_t i = 0; i < route.index.size(); i++)
 	{
 		indexPath = dirPath + route.index[i];
-		if (fileExists(indexPath) && !isDirectory(indexPath) && isFileReadable(indexPath))
-			return (buildSimpleResponse(200, getContentType(indexPath), readFile(indexPath)));
+		if (fileExists(indexPath) && !isDirectory(indexPath) && readFile(indexPath, body))
+			return (buildSimpleResponse(200, getContentType(indexPath), body));
 	}
 	if (route.autoindex)
-		return (buildSimpleResponse(200, "text/html", generateAutoindex(dirPath)));
+		return (buildSimpleResponse(200, "text/html", generateAutoindex(dirPath, urlPath)));
 	return (handleError(403, config));
 }
