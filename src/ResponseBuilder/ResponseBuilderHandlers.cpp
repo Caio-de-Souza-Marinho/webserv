@@ -48,6 +48,8 @@ Response	ResponseBuilder::handlePOST(const Request &request,
 	fileName = extractUploadFilename(request);
 	if (fileName.empty())
 		fileName = generateUploadFilename();
+	if (!isSafeFilename(fileName))
+		return (handleError(400, config));
 
 	filePath = joinPath(route.uploadPath, fileName);
 	if (!writeFile(filePath, request.body))
@@ -68,7 +70,7 @@ Response	ResponseBuilder::handleDELETE(const Request &request, const Route &rout
 	path = router.resolvePath(route, request);
 	if (!fileExists(path))
 		return (handleError(404, config));
-	if (isDirectory(path))
+	if (isDirectory(path) || !(isParentWritable(path)))
 		return (handleError(403, config));
 	if (unlink(path.c_str()) != 0)
 		return (handleError(500, config));

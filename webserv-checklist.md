@@ -134,12 +134,12 @@
 - [x] Retornar 201 com `Location`
 - [ ] **Parsear multipart/form-data real** (boundary, partes) — upload via navegador grava lixo sem isso
 - [ ] Suportar uploads múltiplos no mesmo POST
-- [ ] Sanitizar filename (rejeitar `../`, paths absolutos)
+- [x] Sanitizar filename (rejeitar `../`, paths absolutos)
 
 ### DELETE
 - [x] Resolver path via Router
 - [x] **404/403/500 com `return` correto** (bug corrigido)
-- [ ] Validar permissões de escrita no diretório pai
+- [x] Validar permissões de escrita no diretório pai
 
 ### Helpers de I/O
 - [x] `readFile(path, out)` com parâmetro de saída + retorno bool

@@ -33,6 +33,9 @@ class	ResponseBuilder
 		std::string	generateUploadFilename(void) const;
 		std::string	extractUploadFilename(const Request &request) const;
 		bool		writeFile(const std::string &path, const std::string &content) const;
+		bool		isSafeFilename(const std::string &name) const;
+		bool		isParentWritable(const std::string &path) const;
+		std::string	extractParentPath(const std::string &path) const;
 };
 
 #endif

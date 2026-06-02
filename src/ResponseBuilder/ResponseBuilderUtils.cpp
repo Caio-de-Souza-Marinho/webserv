@@ -1,5 +1,6 @@
 #include "../../include/ResponseBuilder.hpp"
 #include "../../include/MimeTypes.hpp"
+#include <cstddef>
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
@@ -7,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <ctime>
+#include <unistd.h>
 
 // Helpers
 bool	 ResponseBuilder::fileExists(const std::string &path) const
@@ -136,6 +138,13 @@ std::string	ResponseBuilder::extractUploadFilename(const Request &request) const
 	return (filename);
 }
 
+bool	ResponseBuilder::isSafeFilename(const std::string &name) const
+{
+	if (name.find("/") != std::string::npos || name.find("..") != std::string::npos)
+		return (false);
+	return (true);
+}
+
 bool	ResponseBuilder::writeFile(const std::string &path,
 	const std::string &content) const
 {
@@ -149,4 +158,21 @@ bool	ResponseBuilder::writeFile(const std::string &path,
 		return (false);
 	file.close();
 	return (true);
+}
+
+std::string	ResponseBuilder::extractParentPath(const std::string &path) const
+{
+	size_t	pos;
+
+	pos = path.rfind('/');
+	if (pos == std::string::npos)
+		return (".");
+	if (pos == 0)
+		return ("/");
+	return (path.substr(0, pos));
+}
+
+bool	ResponseBuilder::isParentWritable(const std::string &path) const
+{
+	return (access(extractParentPath(path).c_str(), W_OK) == 0);
 }
