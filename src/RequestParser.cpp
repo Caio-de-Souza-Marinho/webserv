@@ -24,7 +24,7 @@ void	RequestParser::reset()
 RequestParser::State	RequestParser::parse(Request &request, std::string &buffer, size_t maxBodySize)
 {
 	this->maxBodySize = maxBodySize;
-	while (state != COMPLETE)
+	while (state != COMPLETE && state != PARSE_ERROR)
 	{
 		if (state == REQUEST_LINE)
 		{
@@ -151,6 +151,12 @@ bool	RequestParser::parseHeaders(Request &request, std::string &buffer)
 				std::istringstream	ss(it->second);
 				ss >> request.contentLength;
 				expectedBodySize = request.contentLength;
+				if (maxBodySize != 0 && expectedBodySize > maxBodySize)
+				{
+					request.errorCode = 413;
+					state = PARSE_ERROR;
+					return (true);
+				}
 			}
 
 			it = request.headers.find("transfer-encoding");
@@ -251,6 +257,12 @@ bool	RequestParser::parseBody(Request &request, std::string &buffer)
 		
 		request.body.append(buffer, 0, currentChunkSize);
 		buffer.erase(0, currentChunkSize);
+		if (maxBodySize != 0 && request.body.size() > maxBodySize)
+		{
+			request.errorCode = 413;
+			state = PARSE_ERROR;
+			return (true);
+		}
 
 		// consume trailing \r\n after chunk data
 		extractLine(buffer);
