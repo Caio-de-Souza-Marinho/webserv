@@ -9,6 +9,10 @@
 WebServer::WebServer(const std::string &configPath)
 	: epfd(-1), router(NULL), responseBuilder(NULL), cgiHandler(NULL)
 {
+	// Ignore SIGPIPE: writing to a socket/pipe whose other end is closed
+	// (a disconnected client, or a CGI that exited) must not kill the server.
+	signal(SIGPIPE, SIG_IGN);
+
 	// 1. config parser
 	ConfigParser			parser(configPath);
 	std::vector<ServerConfig>	configs = parser.parse();

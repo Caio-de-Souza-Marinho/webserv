@@ -68,5 +68,9 @@ std::string Response::getStatusMessage(int code)
 		return ("Internal Server Error");
 	if (code == 501)
 		return ("Not Implemented");
+	if (code == 502)
+		return ("Bad Gateway");
+	if (code == 504)
+		return ("Gateway Timeout");
 	return ("Unknown");
 }
