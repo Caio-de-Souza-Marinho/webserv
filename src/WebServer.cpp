@@ -201,6 +201,18 @@ void	WebServer::readClient(int fd)
 	RequestParser::State	state;
 	state = client.parser->parse(client.request, client.readBuffer, client.server->config.maxBodySize);
 
+	if (state == RequestParser::PARSE_ERROR)
+	{
+		Response	response = responseBuilder->buildErrorResponse(
+			client.request.errorCode ? client.request.errorCode : 400, 
+			client.server->config);
+		client.writeBuffer = response.build();
+		client.writeOffset = 0;
+		client.state = WRITING;
+		modifyEpoll(client.fd, EPOLLOUT);
+		return ;
+	}
+
 	if (state == RequestParser::COMPLETE)
 		handleRequest(client);
 }
