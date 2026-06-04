@@ -14,7 +14,8 @@ void	signalHandler(int)
 }
 
 #define	MAX_EVENTS	64
-#define	TIMEOUT_MS	5000	// how often checkTimeout() runs, in milliseconds
+#define TIMEOUT_MS	5000	// how often checkTimeout() runs, in milliseconds
+#define MAX_CLIENTS	1024
 
 // helpers
 void	WebServer::modifyEpoll(int fd, uint32_t events)
@@ -149,6 +150,13 @@ void	WebServer::acceptClient(int serverFd)
 			return ;
 		}
 
+		if (clients.size() >= MAX_CLIENTS)
+		{
+			Logger::warning("Max clients reached, refusing connection");
+			close(clientFd);
+			continue ;
+		}
+
 		try
 		{
 			setNonBlocking(clientFd);
@@ -210,6 +218,17 @@ void	WebServer::readClient(int fd)
 
 		client.readBuffer.append(buffer, bytes);
 		client.lastActivity = time(NULL);
+
+		if (client.readBuffer.size() > 8192)
+		{
+			client.request.keepAlive = false;
+			Response	response = responseBuilder->buildErrorResponse(400, client.server->config);
+			client.writeBuffer = response.build();
+			client.writeOffset = 0;
+			client.state = WRITING;
+			modifyEpoll(client.fd, EPOLLOUT);
+			return ;
+		}
 	}
 
 	RequestParser::State	state;
