@@ -1,6 +1,7 @@
 #ifndef REQUESTPARSER_HPP
 #define REQUESTPARSER_HPP
 
+#include <cstddef>
 #include <string>
 #include "Request.hpp"
 
@@ -14,10 +15,11 @@ class	RequestParser
 			REQUEST_LINE,
 			HEADERS,
 			BODY,
-			COMPLETE
+			COMPLETE,
+			PARSE_ERROR
 		};
 
-		State	parse(Request &request, std::string &buffer);
+		State	parse(Request &request, std::string &buffer, size_t mazBodySize);
 		void	reset();
 
 	private:
@@ -33,6 +35,7 @@ class	RequestParser
 		bool		parseBody(Request &request, std::string &buffer);
 		std::string	extractLine(std::string &buffer);
 		void		parseURI(Request &request);
+		size_t		maxBodySize;
 };
 
 #endif

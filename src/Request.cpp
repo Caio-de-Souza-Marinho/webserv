@@ -4,7 +4,8 @@ Request::Request() :
 	contentLength(0),
 	isChunked(false),
 	isComplete(false),
-	keepAlive(false)
+	keepAlive(false),
+	errorCode(0)
 {}
 
 void	Request::reset()
@@ -22,4 +23,5 @@ void	Request::reset()
 		isChunked = false;
 		isComplete = false;
 		keepAlive = false;
+		errorCode = 0;
 }

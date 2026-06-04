@@ -13,14 +13,19 @@ class	CGIHandler
 	public:
 		CGIHandler();
 
-		void	execute(Client &client, const std::string &scriptPath, const std::string &interpreter);
+		// Forks the CGI process and wires its stdin/stdout to two pipes.
+		// Stores cgiPid / cgiInputFd / cgiOutputFd on the client and sets
+		// client.state = CGI_RUNNING. Returns false if a pipe/fork failed
+		// (the caller should then answer 500).
+		bool	execute(Client &client, const std::string &scriptPath, const std::string &interpreter);
 
 	private:
-		std::vector<std::string>	buildEnv(const Request &request, const std::string &scriptPath, const Route &route) const;
+		std::vector<std::string>	buildEnv(const Request &request, const std::string &scriptPath, const ServerConfig &config) const;
 		char**				buildEnvp(const std::vector<std::string> &env) const;
 		void				freeEnvp(char **envp) const;
 		char**				buildArgv(const std::string &interpreter, const std::string &scriptPath) const;
 		void				freeArgv(char **argv) const;
+		void				setNonBlocking(int fd) const;
 };
 
 #endif

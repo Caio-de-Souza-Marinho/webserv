@@ -24,11 +24,8 @@ Response ResponseBuilder::handleError(int statusCode, const ServerConfig &config
 	res.headers["Content-Type"] = "text/html";
 
 	it = config.errorPages.find(statusCode);
-	if (it != config.errorPages.end() && isFileReadable(it->second))
-	{
-		res.body = readFile(it->second);
+	if (it != config.errorPages.end() && readFile(it->second, res.body))
 		return (res);
-	}
 	res.body = buildDefaultErrorBody(statusCode);
 	return (res);
 }

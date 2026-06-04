@@ -1,5 +1,6 @@
 #include "../../include/ResponseBuilder.hpp"
 #include "../../include/MimeTypes.hpp"
+#include <cstddef>
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
@@ -7,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <ctime>
+#include <unistd.h>
 
 // Helpers
 bool	 ResponseBuilder::fileExists(const std::string &path) const
@@ -16,17 +18,18 @@ bool	 ResponseBuilder::fileExists(const std::string &path) const
 	return (stat(path.c_str(), &info) == 0);
 }
 
-std::string 	ResponseBuilder::readFile(const std::string &path) const
+bool 	ResponseBuilder::readFile(const std::string &path, std::string &out) const
 {
 	std::ifstream		file;
 	std::ostringstream	buffer;
 
 	file.open(path.c_str(), std::ios::in | std::ios::binary);
 	if (!file.is_open())
-		return ("");
+		return (false);
 	buffer << file.rdbuf();
 	file.close();
-	return (buffer.str());
+	out = buffer.str();
+	return (true);
 }
 
 bool	ResponseBuilder::isDirectory(const std::string &path) const
@@ -55,29 +58,22 @@ Response	ResponseBuilder::buildSimpleResponse(int statusCode, const std::string 
 	return (res);
 }
 
-bool	ResponseBuilder::isFileReadable(const std::string &path) const
-{
-	std::ifstream	file(path.c_str(), std::ios::in | std::ios::binary);
-
-	return (file.is_open());
-}
-
-std::string	ResponseBuilder::generateAutoindex(const std::string &path) const
+std::string	ResponseBuilder::generateAutoindex(const std::string &fsPath, const std::string &urlPath) const
 {
 	DIR		*dir;
 	struct dirent	*entry;
 	std::string	body;
 
-	dir = opendir(path.c_str());
+	dir = opendir(fsPath.c_str());
 	if (dir == NULL)
 		return (buildDefaultErrorBody(403));
 	body = "<html><body><h1>Index of ";
-	body += path;
+	body += fsPath;
 	body += "</h1><ul>";
 	while ((entry = readdir(dir)) != NULL)
 	{
 		body += "<li><a href=\"";
-		body += entry->d_name;
+		body += joinPath(urlPath, entry->d_name);
 		body += "\">";
 		if (entry->d_type == DT_DIR)
 			body += "&#128193; ";
@@ -142,6 +138,13 @@ std::string	ResponseBuilder::extractUploadFilename(const Request &request) const
 	return (filename);
 }
 
+bool	ResponseBuilder::isSafeFilename(const std::string &name) const
+{
+	if (name.find("/") != std::string::npos || name.find("..") != std::string::npos)
+		return (false);
+	return (true);
+}
+
 bool	ResponseBuilder::writeFile(const std::string &path,
 	const std::string &content) const
 {
@@ -155,4 +158,21 @@ bool	ResponseBuilder::writeFile(const std::string &path,
 		return (false);
 	file.close();
 	return (true);
+}
+
+std::string	ResponseBuilder::extractParentPath(const std::string &path) const
+{
+	size_t	pos;
+
+	pos = path.rfind('/');
+	if (pos == std::string::npos)
+		return (".");
+	if (pos == 0)
+		return ("/");
+	return (path.substr(0, pos));
+}
+
+bool	ResponseBuilder::isParentWritable(const std::string &path) const
+{
+	return (access(extractParentPath(path).c_str(), W_OK) == 0);
 }

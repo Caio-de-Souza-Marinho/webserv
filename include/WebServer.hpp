@@ -11,6 +11,8 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <csignal>
+#include <sys/wait.h>
 #include <cstring>
 #include <stdexcept>
 #include <sstream>
@@ -22,6 +24,9 @@
 class Router;
 class ResponseBuilder;
 class CGIHandler;
+
+extern volatile sig_atomic_t	g_running;
+void	signalHandler(int);
 
 class	WebServer
 {
@@ -44,6 +49,10 @@ class	WebServer
 		void		writeClient(int fd);
 		void		handleRequest(Client &client);
 		void		handleCGI(Client &client);
+		void		registerCgi(Client &client);
+		void		finishCgi(Client &client);
+		void		handleCgiTimeout(Client &client);
+		Response	parseCgiOutput(const std::string &raw);
 		void		closeClient(int fd);
 		void		checkTimeouts();
 		void		modifyEpoll(int fd, uint32_t events);

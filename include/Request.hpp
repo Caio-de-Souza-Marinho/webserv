@@ -22,6 +22,7 @@ class	Request
 		bool					isChunked;
 		bool					isComplete;
 		bool					keepAlive;
+		int					errorCode;
 
 		void	reset();
 };

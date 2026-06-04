@@ -64,10 +64,22 @@ bool	Router::isMethodAllowed(const Route &route, const std::string &method) cons
 	return (route.methods.find(method) != route.methods.end());
 }
 
+// -- matchCGI
+// Walk the route's extension->interpreter map. If the request path ends with
+// one of the registered extensions (e.g. ".py"), return a pointer to the
+// interpreter string for that extension. Otherwise NULL (not a CGI request).
 const std::string*	Router::matchCGI(const Route &route, const std::string &path) const
 {
-	(void) route;
-	(void) path;
+	std::map<std::string, std::string>::const_iterator	it;
+
+	for (it = route.cgiHandlers.begin(); it != route.cgiHandlers.end(); ++it)
+	{
+		const std::string	&ext = it->first;
+
+		if (path.size() >= ext.size()
+			&& path.compare(path.size() - ext.size(), ext.size(), ext) == 0)
+			return (&it->second);
+	}
 	return (NULL);
 }
 
