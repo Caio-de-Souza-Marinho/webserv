@@ -13,6 +13,9 @@ WebServer::WebServer(const std::string &configPath)
 	// (a disconnected client, or a CGI that exited) must not kill the server.
 	signal(SIGPIPE, SIG_IGN);
 
+	signal(SIGINT, signalHandler);
+	signal(SIGTERM, signalHandler);
+
 	// 1. config parser
 	ConfigParser			parser(configPath);
 	std::vector<ServerConfig>	configs = parser.parse();

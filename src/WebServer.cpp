@@ -6,6 +6,13 @@
 #include "../include/CGIHandler.hpp"
 #include <cerrno>
 
+volatile	sig_atomic_t	g_running = 1;
+
+void	signalHandler(int)
+{
+	g_running = 0;
+}
+
 #define	MAX_EVENTS	64
 #define	TIMEOUT_MS	5000	// how often checkTimeout() runs, in milliseconds
 
@@ -47,74 +54,81 @@ void	WebServer::run()
 
 	Logger::info("Server running");
 
-	while (true)
+	while (g_running)
 	{
-		int	n = epoll_wait(epfd, events, MAX_EVENTS, TIMEOUT_MS);
-
-		if (n == -1)
+		while (true)
 		{
-			if (errno == EINTR)	// interrupted by signal (e.g. SIGCHLD from CGI) - just retry
-				continue ;
-			Logger::error("epoll_wait failed");
-			break ;
-		}
+			int	n = epoll_wait(epfd, events, MAX_EVENTS, TIMEOUT_MS);
 
-		// timeout (n == 0) - no evnets, just run timeout checks
-		if (n == 0)
-		{
-			checkTimeouts();
-			continue ;
-		}
-
-		for (int i = 0; i < n; i++)
-		{
-			int		fd = events[i].data.fd;
-			uint32_t	ev = events[i].events;
-
-			// is this a server socket? -> new connection
-			if (fdToServer.count(fd))
+			if (n == -1)
 			{
-				acceptClient(fd);
-				continue ;
-			}
-
-			// CGI pipe event? cgiOutputFd / cgiInputFd are not keys in 'clients',
-			// so we find the owning client by scanning. This MUST come before the
-			// generic EPOLLHUP handling below: a finished CGI hangs up its pipe,
-			// and we want handleCGI() to read the final bytes / detect EOF.
-			{
-				bool	isCgiFd = false;
-				for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+				if (errno == EINTR)	// interrupted by signal (e.g. SIGCHLD from CGI) - just retry
 				{
-					Client &client = it->second;
-					if (fd == client.cgiOutputFd || fd == client.cgiInputFd)
-					{
-						handleCGI(client);
-						isCgiFd = true;
+					if (!g_running)
 						break ;
-					}
-				}
-				if (isCgiFd)
 					continue ;
+				}
+				Logger::error("epoll_wait failed");
+				break ;
 			}
 
-			// error or hangup on a regular client fd
-			if (ev & (EPOLLERR | EPOLLHUP))
+			// timeout (n == 0) - no evnets, just run timeout checks
+			if (n == 0)
 			{
-				closeClient(fd);
+				checkTimeouts();
 				continue ;
 			}
 
-			// regular client fd
-			if (!clients.count(fd))
-				continue ;
+			for (int i = 0; i < n; i++)
+			{
+				int		fd = events[i].data.fd;
+				uint32_t	ev = events[i].events;
 
-			if (ev & EPOLLIN)
-				readClient(fd);
-			if (ev & EPOLLOUT)
-				writeClient(fd);
+				// is this a server socket? -> new connection
+				if (fdToServer.count(fd))
+				{
+					acceptClient(fd);
+					continue ;
+				}
+
+				// CGI pipe event? cgiOutputFd / cgiInputFd are not keys in 'clients',
+				// so we find the owning client by scanning. This MUST come before the
+				// generic EPOLLHUP handling below: a finished CGI hangs up its pipe,
+				// and we want handleCGI() to read the final bytes / detect EOF.
+				{
+					bool	isCgiFd = false;
+					for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+					{
+						Client &client = it->second;
+						if (fd == client.cgiOutputFd || fd == client.cgiInputFd)
+						{
+							handleCGI(client);
+							isCgiFd = true;
+							break ;
+						}
+					}
+					if (isCgiFd)
+						continue ;
+				}
+
+				// error or hangup on a regular client fd
+				if (ev & (EPOLLERR | EPOLLHUP))
+				{
+					closeClient(fd);
+					continue ;
+				}
+
+				// regular client fd
+				if (!clients.count(fd))
+					continue ;
+
+				if (ev & EPOLLIN)
+					readClient(fd);
+				if (ev & EPOLLOUT)
+					writeClient(fd);
+			}
+			checkTimeouts();
 		}
-		checkTimeouts();
 	}
 }
 
@@ -203,6 +217,7 @@ void	WebServer::readClient(int fd)
 
 	if (state == RequestParser::PARSE_ERROR)
 	{
+		client.request.keepAlive = false;
 		Response	response = responseBuilder->buildErrorResponse(
 			client.request.errorCode ? client.request.errorCode : 400, 
 			client.server->config);

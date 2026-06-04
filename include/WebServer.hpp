@@ -25,6 +25,9 @@ class Router;
 class ResponseBuilder;
 class CGIHandler;
 
+extern volatile sig_atomic_t	g_running;
+void	signalHandler(int);
+
 class	WebServer
 {
 	public:
