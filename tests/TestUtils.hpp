@@ -4,8 +4,8 @@
 #include <iostream>
 #include <string>
 
-static int	g_testsPassed = 0;
-static int	g_testsFailed = 0;
+extern int	g_testsPassed;
+extern int	g_testsFailed;
 
 #define ASSERT_TRUE(condition) \
 	do { \
@@ -25,9 +25,8 @@ static int	g_testsFailed = 0;
 		else { \
 			g_testsFailed++; \
 			std::cerr << "FAIL: " << __FILE__ << ":" << __LINE__ \
-			<< "Expected [" << expected << "] but got [" \
-			<< actual << "]" << std::endl \
+			<< " Expected [" << expected << "] but got [" \
+			<< actual << "]" << std::endl; \
 		} \
 	} while (0)
-
 #endif

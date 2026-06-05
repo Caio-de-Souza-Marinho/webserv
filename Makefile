@@ -42,10 +42,10 @@ ${OBJ_DIR}/%.o:	${SRC_DIR}/%.cpp
 	@mkdir -p $(dir $@)
 	${CC} ${FLAGS} ${INCLUDES} -c $< -o $@
 
-TESTS_SRCS = tests/TestRunner.cpp tests/TestRequestParser.cpp
+TESTS_SRCS = tests/TestRunner.cpp tests/TestUtils.cpp tests/TestRequestParser.cpp
 
 test:
-	c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} src/RequestParser.cpp -I include -o tester
+	c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} src/RequestParser.cpp src/Request.cpp src/Logger.cpp -I include -o tester
 
 clean:
 	rm -rf ${OBJ_DIR}

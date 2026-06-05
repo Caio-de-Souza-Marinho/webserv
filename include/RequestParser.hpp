@@ -19,7 +19,7 @@ class	RequestParser
 			PARSE_ERROR
 		};
 
-		State	parse(Request &request, std::string &buffer, size_t mazBodySize);
+		State	parse(Request &request, std::string &buffer, size_t maxBodySize);
 		void	reset();
 
 	private:

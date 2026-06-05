@@ -4,3 +4,5 @@
 webserv
 obj/
 www/uploads/*
+tester
+cgi_tester
