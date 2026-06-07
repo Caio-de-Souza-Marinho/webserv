@@ -55,6 +55,8 @@ bool	RequestParser::parseRequestLine(Request &request, std::string &buffer)
 	if (!(ss >> request.method >> request.rawUri >> request.version))
 	{
 		Logger::warning("malformed request line: " + line);
+		request.errorCode = 400;
+		state = PARSE_ERROR;
 		return (false);
 	}
 
@@ -64,6 +66,8 @@ bool	RequestParser::parseRequestLine(Request &request, std::string &buffer)
 		if (!isupper(request.method[i]))
 		{
 			Logger::warning("invalid method: " + request.method);
+			request.errorCode = 400;
+			state = PARSE_ERROR;
 			return (false);
 		}
 	}
@@ -72,6 +76,8 @@ bool	RequestParser::parseRequestLine(Request &request, std::string &buffer)
 	if (request.version != "HTTP/1.0" && request.version != "HTTP/1.1")
 	{
 		Logger::warning("unsupported HTTP versoin: " + request.version);
+		request.errorCode = 400;
+		state = PARSE_ERROR;
 		return (false);
 	}
 
