@@ -15,15 +15,12 @@ SRCS	= ${SRC_DIR}/main.cpp \
 	  ${SRC_DIR}/ConfigParser.cpp \
 	  ${SRC_DIR}/Request.cpp \
 	  ${SRC_DIR}/RequestParser.cpp \
-	  ${SRC_DIR}/Mock-Config.cpp \
 	  ${SRC_DIR}/Response.cpp \
 	  ${SRC_DIR}/ResponseBuilder/ResponseBuilder.cpp \
 	  ${SRC_DIR}/ResponseBuilder/ResponseBuilderHandlers.cpp \
 	  ${SRC_DIR}/ResponseBuilder/ResponseBuilderErrors.cpp \
 	  ${SRC_DIR}/ResponseBuilder/ResponseBuilderUtils.cpp \
 	  ${SRC_DIR}/Router.cpp \
-	  ${SRC_DIR}/Tester.cpp \
-	  ${SRC_DIR}/Router-Tester.cpp \
 	  ${SRC_DIR}/WebServer.cpp \
 	  ${SRC_DIR}/WebServer-Init.cpp \
 	  ${SRC_DIR}/WebServer-CGI.cpp \
