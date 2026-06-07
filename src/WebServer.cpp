@@ -219,10 +219,10 @@ void	WebServer::readClient(int fd)
 		client.readBuffer.append(buffer, bytes);
 		client.lastActivity = time(NULL);
 
-		if (client.readBuffer.size() > 8192)
+		if (client.server->config.maxBodySize > 0 && client.readBuffer.size() > client.server->config.maxBodySize + 8192)
 		{
 			client.request.keepAlive = false;
-			Response	response = responseBuilder->buildErrorResponse(400, client.server->config);
+			Response	response = responseBuilder->buildErrorResponse(413, client.server->config);
 			client.writeBuffer = response.build();
 			client.writeOffset = 0;
 			client.state = WRITING;
