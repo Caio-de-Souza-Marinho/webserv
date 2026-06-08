@@ -41,7 +41,7 @@ ${OBJ_DIR}/%.o:	${SRC_DIR}/%.cpp
 
 TESTS_SRCS = tests/TestRunner.cpp tests/TestUtils.cpp tests/TestRequestParser.cpp
 
-test:
+test: re
 	c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} src/RequestParser.cpp src/Request.cpp src/Logger.cpp -I include -o tester
 	./tester
 

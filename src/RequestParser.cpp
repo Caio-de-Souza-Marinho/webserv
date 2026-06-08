@@ -150,6 +150,12 @@ bool	RequestParser::parseHeaders(Request &request, std::string &buffer)
 			it = request.headers.find("host");
 			if (it != request.headers.end())
 				request.host = it->second;
+			else if (request.version == "HTTP/1.1")
+			{
+				request.errorCode = 400;
+				state = PARSE_ERROR;
+				return (true);
+			}
 
 			it = request.headers.find("content-length");
 			if (it != request.headers.end())
