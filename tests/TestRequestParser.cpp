@@ -195,6 +195,72 @@ void	testRequestParserIncrementalRead()
 	ASSERT_EQ(std::string("localhost"), request.host);
 }
 
+// HTTP/1.0 should complete without Host (Host not required in 1.0)
+void	testRequestParserHttp10NoHost()
+{
+	RequestParser	parser;
+	Request		request;
+
+	std::string	buffer =
+		"GET /index.html HTTP/1.0\r\n"
+		"Host: localhost\r\n"
+		"\r\n";
+
+	RequestParser::State	state;
+
+	state = parser.parse(request, buffer, 1000000);
+
+	ASSERT_EQ(RequestParser::COMPLETE, state);
+}
+
+// URI with query string should split correctly
+void	testRequestParserQueryString()
+{
+	RequestParser	parser;
+	Request		request;
+
+	std::string	buffer =
+		"GET /search?q=hello&page=2 HTTP/1.1\r\n"
+		"Host: localhost\r\n"
+		"\r\n";
+
+	RequestParser::State	state;
+
+	state = parser.parse(request, buffer, 1000000);
+
+	ASSERT_EQ(RequestParser::COMPLETE, state);
+	ASSERT_EQ(std::string("/search"), request.path);
+	ASSERT_EQ(std::string("q=hello&page=2"), request.query);
+}
+
+// Parser reset should allow reuse for a second request
+void	testRequestParserReset()
+{
+	RequestParser	parser;
+	Request		request;
+
+	std::string	buffer =
+		"GET /first HTTP/1.1\r\n"
+		"Host: localhost\r\n"
+		"\r\n";
+	parser.parse(request, buffer, 1000000);
+
+	parser.reset();
+	request.reset();
+
+	buffer =
+		"GET /second HTTP/1.1\r\n"
+		"Host: localhost\r\n"
+		"\r\n";
+
+	RequestParser::State	state;
+
+	state = parser.parse(request, buffer, 1000000);
+
+	ASSERT_EQ(RequestParser::COMPLETE, state);
+	ASSERT_EQ(std::string("/second"), request.rawUri);
+}
+
 void	testRequestParser()
 {
 	testRequestParserSimpleGet();
@@ -206,4 +272,7 @@ void	testRequestParser()
 	testRequestParserPartialRequest();
 	testRequestParserChunked();
 	testRequestParserIncrementalRead();
+	testRequestParserHttp10NoHost();
+	testRequestParserQueryString();
+	testRequestParserReset();
 }
