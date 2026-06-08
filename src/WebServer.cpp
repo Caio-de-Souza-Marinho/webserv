@@ -374,7 +374,6 @@ void	WebServer::closeClient(int fd)
 void	WebServer::checkTimeouts()
 {
 	time_t			now = time(NULL);
-	std::vector<int>	toClose;
 
 	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
 	{
@@ -388,10 +387,21 @@ void	WebServer::checkTimeouts()
 			continue ;
 		}
 
-		if (now - client.lastActivity > 30)
-			toClose.push_back(client.fd);
-	}
+		if (client.state == WRITING)
+			continue ;
 
-	for (size_t i = 0; i < toClose.size(); i++)
-		closeClient(toClose[i]);
+		if (now - client.lastActivity > 30)
+		{
+			Response	response;
+
+			response = responseBuilder->buildErrorResponse(408, client.server->config);
+
+			client.request.keepAlive = false;
+			client.writeBuffer = response.build();
+			client.writeOffset = 0;
+			client.state = WRITING;
+
+			modifyEpoll(client.fd, EPOLLOUT);
+		}
+	}
 }
