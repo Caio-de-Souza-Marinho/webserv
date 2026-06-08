@@ -72,6 +72,15 @@ bool	RequestParser::parseRequestLine(Request &request, std::string &buffer)
 		}
 	}
 
+	// validate method - only allow known methods
+	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE")
+	{
+		Logger::warning("invalid method: " + request.method);
+		request.errorCode = 400;
+		state = PARSE_ERROR;
+		return (false);
+	}
+
 	// validate version
 	if (request.version != "HTTP/1.0" && request.version != "HTTP/1.1")
 	{
