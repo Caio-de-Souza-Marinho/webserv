@@ -30,3 +30,16 @@ extern int	g_testsFailed;
 		} \
 	} while (0)
 #endif
+
+#define RUN_TEST(test_fn) \
+	do { \
+		try { \
+			test_fn(); \
+		} catch (const std::exception &e) { \
+			g_testsFailed++; \
+			std::cerr << "FAIL: " << #test_fn << " threw exception: " << e.what() << std::endl; \
+		} catch (...) { \
+			g_testsFailed++; \
+			std::cerr << "FAIL: " << #test_fn << " threw unknown exception: " << std::endl; \
+		} \
+	} while (0)

@@ -263,16 +263,16 @@ void	testRequestParserReset()
 
 void	testRequestParser()
 {
-	testRequestParserSimpleGet();
-	testRequestParserPost();
-	testRequestParserDelete();
-	testRequestParserMissingHost();
-	testRequestParserInvalidMethod();
-	testRequestParserBodyTooLarge();
-	testRequestParserPartialRequest();
-	testRequestParserChunked();
-	testRequestParserIncrementalRead();
-	testRequestParserHttp10NoHost();
-	testRequestParserQueryString();
-	testRequestParserReset();
+	RUN_TEST(testRequestParserSimpleGet);
+	RUN_TEST(testRequestParserPost);
+	RUN_TEST(testRequestParserDelete);
+	RUN_TEST(testRequestParserMissingHost);
+	RUN_TEST(testRequestParserInvalidMethod);
+	RUN_TEST(testRequestParserBodyTooLarge);
+	RUN_TEST(testRequestParserPartialRequest);
+	RUN_TEST(testRequestParserChunked);
+	RUN_TEST(testRequestParserIncrementalRead);
+	RUN_TEST(testRequestParserHttp10NoHost);
+	RUN_TEST(testRequestParserQueryString);
+	RUN_TEST(testRequestParserReset);
 }
