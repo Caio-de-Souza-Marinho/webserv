@@ -39,10 +39,19 @@ ${OBJ_DIR}/%.o:	${SRC_DIR}/%.cpp
 	@mkdir -p $(dir $@)
 	${CC} ${FLAGS} ${INCLUDES} -c $< -o $@
 
-TESTS_SRCS = tests/TestRunner.cpp tests/TestUtils.cpp tests/TestRequestParser.cpp
+TEST_DIR = tests
+
+TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
+	     ${TEST_DIR}/TestUtils.cpp \
+	     ${TEST_DIR}/TestRequestParser.cpp \
+	     ${TEST_DIR}/TestRouter.cpp \
+	     ${SRC_DIR}/Request.cpp \
+	     ${SRC_DIR}/RequestParser.cpp \
+	     ${SRC_DIR}/Logger.cpp \
+	     ${SRC_DIR}/Router.cpp \
 
 test: re
-	c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} src/RequestParser.cpp src/Request.cpp src/Logger.cpp -I include -o tester
+	c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o tester
 	./tester
 
 clean:
