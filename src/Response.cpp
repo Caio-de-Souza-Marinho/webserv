@@ -61,7 +61,7 @@ std::string Response::getStatusMessage(int code)
 	if (code == 405)
 		return ("Method Not Allowed");
 	if (code == 408)
-		return ("Request Timout");
+		return ("Request Timeout");
 	if (code == 413)
 		return ("Content Too Large");
 	if (code == 500)
