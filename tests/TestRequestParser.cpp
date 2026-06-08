@@ -89,7 +89,8 @@ void	testRequestParserInvalidMethod()
 	Request		request;
 
 	std::string	buffer =
-		"GET /index.html HTTP/1.1\r\n"
+		"BREW /coffee HTTP/1.1\r\n"
+		"Host: localhost\r\n"
 		"\r\n";
 
 	RequestParser::State	state;
@@ -120,7 +121,7 @@ void	testRequestParserBodyTooLarge()
 
 	RequestParser::State	state;
 
-	state = parser.parse(request, buffer, 1000000);
+	state = parser.parse(request, buffer, 1000);
 
 	ASSERT_EQ(RequestParser::PARSE_ERROR, state);
 	ASSERT_EQ(413, request.errorCode);
