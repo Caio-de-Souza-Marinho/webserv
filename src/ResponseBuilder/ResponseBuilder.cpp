@@ -43,3 +43,14 @@ Response ResponseBuilder::buildErrorResponse(int code, const ServerConfig &confi
 {
 	return (handleError(code, config));
 }
+
+Response	ResponseBuilder::buildSimpleResponse(int statusCode, const std::string &contentType, const std::string &body) const
+{
+	Response	res;
+
+	res.statusCode = statusCode;
+	if (!contentType.empty())
+		res.headers["Content-Type"] = contentType;
+	res.body = body;
+	return (res);
+}
