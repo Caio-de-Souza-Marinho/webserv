@@ -3,6 +3,7 @@
 void	testRequestParser();
 void	testRouter();
 void	testConfigParser();
+void	testResponseBuilder();
 
 int	main()
 {

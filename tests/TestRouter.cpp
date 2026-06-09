@@ -270,6 +270,7 @@ void	testRouter()
 {
 	RUN_TEST(testRouterMatchRoot);
 	RUN_TEST(testRouterMatchExact);
+	RUN_TEST(testRouterMatchPrefix);
 	RUN_TEST(testRouterLongestPrefixWins);
 	RUN_TEST(testRouterNoRoutes);
 	RUN_TEST(testRouterRootCatchesEverything);
