@@ -46,11 +46,18 @@ TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
 	     ${TEST_DIR}/TestRequestParser.cpp \
 	     ${TEST_DIR}/TestRouter.cpp \
 	     ${TEST_DIR}/TestConfigParser.cpp \
+	     ${TEST_DIR}/TestResponseBuilder.cpp \
 	     ${SRC_DIR}/Request.cpp \
 	     ${SRC_DIR}/RequestParser.cpp \
 	     ${SRC_DIR}/Logger.cpp \
 	     ${SRC_DIR}/Router.cpp \
 	     ${SRC_DIR}/ConfigParser.cpp \
+	     ${SRC_DIR}/Response.cpp \
+	     ${SRC_DIR}/MimeTypes.cpp \
+	     ${SRC_DIR}/ResponseBuilder/ResponseBuilder.cpp \
+	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderHandlers.cpp \
+	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderErrors.cpp \
+	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderUtils.cpp \
 
 test: re
 	c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o tester
