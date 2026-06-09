@@ -138,10 +138,10 @@
 - [x] `Content-Length` automatico
 - [x] `Content-Type` default
 - [x] Status messages (incl. 502, 504 do CGI)
-- [ ] Header `Server: webserv/1.0`
-- [ ] Header `Date:` RFC 1123
-- [ ] Header `Connection:` explicito
-- [ ] **BUG: "Request Timout" -> "Request Timeout"**
+- [x] Header `Server: webserv/1.0`
+- [x] Header `Date:` RFC 1123
+- [x] Header `Connection:` explicito
+- [x] **BUG: "Request Timout" -> "Request Timeout"**
 
 ---
 

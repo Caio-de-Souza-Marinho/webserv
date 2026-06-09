@@ -11,9 +11,10 @@
 /* ************************************************************************** */
 
 #include "../include/Response.hpp"
+#include <ctime>
 #include <sstream>
 
-Response::Response() : statusCode(200) {}
+Response::Response() : statusCode(200), keepAlive(false) {}
 
 std::string Response::build() const
 {
@@ -27,6 +28,9 @@ std::string Response::build() const
 	finalHeaders["Content-Length"] = length.str();
 	if (finalHeaders.find("Content-Type") == finalHeaders.end() && !body.empty())
 		finalHeaders["Content-Type"] = "text/html";
+	finalHeaders["Server"] = "webserv/1.0";
+	finalHeaders["Date"] = this->getDate();
+	finalHeaders["Connection"] = keepAlive ? "keep-alive" : "close";
 
 	response << "HTTP/1.1 " << statusCode << " " << getStatusMessage(statusCode) << "\r\n";
 
@@ -73,4 +77,14 @@ std::string Response::getStatusMessage(int code)
 	if (code == 504)
 		return ("Gateway Timeout");
 	return ("Unknown");
+}
+
+std::string	Response::getDate() const
+{
+	char	buf[64];
+	time_t	now = time(NULL);
+	struct std::tm *gmt = gmtime(&now);
+
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+	return (std::string(buf));
 }
