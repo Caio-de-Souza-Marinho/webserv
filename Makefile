@@ -45,10 +45,12 @@ TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
 	     ${TEST_DIR}/TestUtils.cpp \
 	     ${TEST_DIR}/TestRequestParser.cpp \
 	     ${TEST_DIR}/TestRouter.cpp \
+	     ${TEST_DIR}/TestConfigParser.cpp \
 	     ${SRC_DIR}/Request.cpp \
 	     ${SRC_DIR}/RequestParser.cpp \
 	     ${SRC_DIR}/Logger.cpp \
 	     ${SRC_DIR}/Router.cpp \
+	     ${SRC_DIR}/ConfigParser.cpp \
 
 test: re
 	c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o tester
