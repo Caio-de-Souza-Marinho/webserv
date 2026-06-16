@@ -77,7 +77,7 @@ bool	RequestParser::parseRequestLine(Request &request, std::string &buffer)
 
 	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE")
 	{
-		request.errorCode = 501;
+		request.errorCode = 405;
 		state = PARSE_ERROR;
 		return (true);
 	}

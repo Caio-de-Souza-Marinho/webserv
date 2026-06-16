@@ -70,7 +70,9 @@ TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
 	     ${SRC_DIR}/ResponseBuilder/ResponseBuilder.cpp \
 	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderHandlers.cpp \
 	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderErrors.cpp \
-	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderUtils.cpp \
+	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderAutoindex.cpp \
+	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderFile.cpp \
+	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderPath.cpp \
 
 test: re
 	@c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o tester
