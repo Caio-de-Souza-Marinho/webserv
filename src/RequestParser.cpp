@@ -1,5 +1,6 @@
 #include "../include/RequestParser.hpp"
 #include "../include/Logger.hpp"
+#include <cctype>
 #include <cstddef>
 #include <sstream>
 #include <algorithm>
@@ -54,10 +55,11 @@ bool	RequestParser::parseRequestLine(Request &request, std::string &buffer)
 	std::istringstream	ss(line);
 	if (!(ss >> request.method >> request.rawUri >> request.version))
 	{
-		Logger::warning("malformed request line: " + line);
 		request.errorCode = 400;
 		state = PARSE_ERROR;
-		return (false);
+		return (true);
+		//Logger::warning("malformed request line: " + line);
+		//return (false);
 	}
 
 	// validate method - uppsercase letters only
@@ -65,31 +67,37 @@ bool	RequestParser::parseRequestLine(Request &request, std::string &buffer)
 	{
 		if (!isupper(request.method[i]))
 		{
-			Logger::warning("invalid method: " + request.method);
 			request.errorCode = 400;
 			state = PARSE_ERROR;
-			return (false);
+			return (true);
+			//Logger::warning("invalid method: " + request.method);
+			//return (false);
 		}
 	}
 
-	// validate method - only allow known methods
 	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE")
 	{
-		Logger::warning("invalid method: " + request.method);
-		request.errorCode = 400;
+		request.errorCode = 501;
 		state = PARSE_ERROR;
-		return (false);
+		return (true);
 	}
 
 	// validate version
 	if (request.version != "HTTP/1.0" && request.version != "HTTP/1.1")
 	{
-		Logger::warning("unsupported HTTP versoin: " + request.version);
-		request.errorCode = 400;
+		request.errorCode = 505;
 		state = PARSE_ERROR;
-		return (false);
+		return (true);
+		//Logger::warning("unsupported HTTP versoin: " + request.version);
+		//return (false);
 	}
 
+	if (request.rawUri.size() > 8192)
+	{
+		request.errorCode = 414;
+		state = PARSE_ERROR;
+		return (true);
+	}
 	parseURI(request);
 	state = HEADERS;
 
@@ -169,6 +177,17 @@ bool	RequestParser::parseHeaders(Request &request, std::string &buffer)
 			it = request.headers.find("content-length");
 			if (it != request.headers.end())
 			{
+				const std::string	&cl = it->second;
+				bool			valid = !cl.empty();
+				for (size_t i = 0; i < cl.size(); i++)
+					if (!isdigit(cl[i]))
+						valid = false;
+				if (!valid)
+				{
+					request.errorCode = 400;
+					state = PARSE_ERROR;
+					return (true);
+				}
 				std::istringstream	ss(it->second);
 				ss >> request.contentLength;
 				expectedBodySize = request.contentLength;

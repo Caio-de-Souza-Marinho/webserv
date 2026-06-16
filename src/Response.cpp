@@ -68,6 +68,8 @@ std::string Response::getStatusMessage(int code)
 		return ("Request Timeout");
 	if (code == 413)
 		return ("Content Too Large");
+	if (code == 414)
+		return ("URI Too Long");
 	if (code == 500)
 		return ("Internal Server Error");
 	if (code == 501)
@@ -76,6 +78,8 @@ std::string Response::getStatusMessage(int code)
 		return ("Bad Gateway");
 	if (code == 504)
 		return ("Gateway Timeout");
+	if (code == 505)
+		return ("HTTP Version	");
 	return ("Unknown");
 }
 

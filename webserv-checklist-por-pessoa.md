@@ -81,9 +81,9 @@
 - [x] `maxBodySize` chega no `parse()`
 - [x] body regular: `expectedBodySize > maxBodySize` -> 413 + PARSE_ERROR
 - [x] chunked: acumular e checar a cada chunk -> 413
-- [ ] URI muito longa -> 414
-- [ ] metodo desconhecido -> 501
-- [ ] `Content-Length` nao-numerico -> 400
+- [x] URI muito longa -> 414
+- [x] metodo desconhecido -> 501
+- [x] `Content-Length` nao-numerico -> 400
 - [ ] headers duplicados
 - [ ] limite de tamanho de headers (DoS)
 - [ ] `Expect: 100-continue`
