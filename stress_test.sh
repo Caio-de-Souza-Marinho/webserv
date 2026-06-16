@@ -42,8 +42,13 @@ echo ""
 echo "=== Keep-Alive pipeline (ab) ==="
 if require_tool ab; then
     RESULT=$(ab -q -n 2000 -c 50 -k "$BASE/index.html" 2>&1)
-    FAILED=$(echo "$RESULT" | grep "Failed requests" | awk '{print $3}')
-    check "Keep-Alive: 0 failed requests" "$([ "$FAILED" = "0" ] && echo 0 || echo 1)"
+    if echo "$RESULT" | grep -q "apr_pollset_poll\|Cannot connect\|Connection refused"; then
+        check "Keep-Alive: ab completed (no timeout)" "1"
+    else
+        FAILED=$(echo "$RESULT" | grep "Failed requests" | awk '{print $3}')
+        FAILED="${FAILED:-1}"  # treat missing as failure
+        check "Keep-Alive: 0 failed requests" "$([ "$FAILED" = "0" ] && echo 0 || echo 1)"
+    fi
 fi
 
 echo ""

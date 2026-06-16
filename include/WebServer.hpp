@@ -59,6 +59,7 @@ class	WebServer
 		void		removeFromEpoll(int fd);
 		void		setNonBlocking(int fd);
 		std::string	intToStr(int n);
+		void		prepareResponse(Client &client, const Response &response);
 };
 
 #endif

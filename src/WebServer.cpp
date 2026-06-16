@@ -28,6 +28,24 @@ void	WebServer::modifyEpoll(int fd, uint32_t events)
 		Logger::error("epoll_ctl MOD failed");
 }
 
+void	WebServer::prepareResponse(Client &client, const Response &response)
+{
+	// Copy the response into the client
+	client.response = response;
+
+	// Set Connection header according to keep-alive flag
+	if (client.request.keepAlive)
+		client.response.headers["Connection"] = "keep-alive";
+	else
+		client.response.headers["Connection"] = "close";
+
+	// Build the wire format and set up writing
+	client.writeBuffer = client.response.build();
+	client.writeOffset = 0;
+	client.state = WRITING;
+	modifyEpoll(client.fd, EPOLLOUT);
+}
+
 void	WebServer::removeFromEpoll(int fd)
 {
 	if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
@@ -223,11 +241,7 @@ void	WebServer::readClient(int fd)
 		{
 			client.request.keepAlive = false;
 			Response	response = responseBuilder->buildErrorResponse(413, client.server->config);
-			client.writeBuffer = response.build();
-			client.writeOffset = 0;
-			client.state = WRITING;
-			modifyEpoll(client.fd, EPOLLOUT);
-			return ;
+			prepareResponse(client, response);
 		}
 	}
 
@@ -240,11 +254,7 @@ void	WebServer::readClient(int fd)
 		Response	response = responseBuilder->buildErrorResponse(
 			client.request.errorCode ? client.request.errorCode : 400, 
 			client.server->config);
-		client.writeBuffer = response.build();
-		client.writeOffset = 0;
-		client.state = WRITING;
-		modifyEpoll(client.fd, EPOLLOUT);
-		return ;
+		prepareResponse(client, response);
 	}
 
 	if (state == RequestParser::COMPLETE)
@@ -290,12 +300,7 @@ void	WebServer::handleRequest(Client &client)
 		response = responseBuilder->buildResponse(client.request, route, client.server->config);
 	}
 
-	client.response = response;
-	client.writeBuffer = response.build();
-	client.writeOffset = 0;
-	client.state = WRITING;
-
-	modifyEpoll(client.fd, EPOLLOUT);
+	prepareResponse(client, response);
 }
 
 void	WebServer::writeClient(int fd)
@@ -327,7 +332,6 @@ void	WebServer::writeClient(int fd)
 		return ;
 	}
 
-	client.readBuffer.clear();
 	client.writeBuffer.clear();
 	client.writeOffset = 0;
 	client.request.reset();
@@ -335,6 +339,26 @@ void	WebServer::writeClient(int fd)
 	client.state = READING;
 
 	modifyEpoll(fd, EPOLLIN);
+
+	if (!client.readBuffer.empty())
+	{
+		RequestParser::State state = client.parser->parse(
+		client.request, client.readBuffer,
+		client.server->config.maxBodySize);
+
+		if (state == RequestParser::PARSE_ERROR)
+		{
+			client.request.keepAlive = false;
+			Response response = responseBuilder->buildErrorResponse(
+				client.request.errorCode ? client.request.errorCode : 400,
+				client.server->config);
+			prepareResponse(client, response);
+		}
+		else if (state == RequestParser::COMPLETE)
+		{
+			handleRequest(client);
+		}
+	}
 }
 
 void	WebServer::closeClient(int fd)
@@ -392,16 +416,9 @@ void	WebServer::checkTimeouts()
 
 		if (now - client.lastActivity > 30)
 		{
-			Response	response;
-
-			response = responseBuilder->buildErrorResponse(408, client.server->config);
-
 			client.request.keepAlive = false;
-			client.writeBuffer = response.build();
-			client.writeOffset = 0;
-			client.state = WRITING;
-
-			modifyEpoll(client.fd, EPOLLOUT);
+			Response	response = responseBuilder->buildErrorResponse(408, client.server->config);
+			prepareResponse(client, response);
 		}
 	}
 }

@@ -115,14 +115,8 @@ void	WebServer::finishCgi(Client &client)
 	else
 		response = responseBuilder->buildErrorResponse(502, client.server->config);
 
-	client.response	   = response;
-	client.writeBuffer = response.build();
-	client.writeOffset = 0;
 	client.cgiBuffer.clear();
-	client.state	   = WRITING;
-
-	modifyEpoll(client.fd, EPOLLOUT);
-}
+	prepareResponse(client, response);}
 
 // Splits the raw CGI output into headers + body. The script's own headers
 // (Content-Type, etc.) are copied into the Response; a "Status: NNN" header
@@ -222,12 +216,7 @@ void	WebServer::handleCgiTimeout(Client &client)
 	}
 
 	Response	response = responseBuilder->buildErrorResponse(504, client.server->config);
-	client.response	   = response;
-	client.writeBuffer = response.build();
-	client.writeOffset = 0;
 	client.cgiBuffer.clear();
-	client.state	   = WRITING;
+	prepareResponse(client, response);
 	client.lastActivity = time(NULL);
-
-	modifyEpoll(client.fd, EPOLLOUT);
 }

@@ -188,11 +188,27 @@ bool	RequestParser::parseHeaders(Request &request, std::string &buffer)
 			if (it != request.headers.end())
 			{
 				std::string	val = it->second;
-				// lowercase for comparison
+				// Trim leading/trailing whitespace
+				size_t	start = val.find_first_not_of(" \t");
+				if (start == std::string::npos)
+					val.clear();
+				else
+					val = val.substr(start);
+				size_t	end = val.find_last_not_of(" \t");
+				if (end != std::string::npos)
+					val = val.substr(0, end + 1);
+
 				for (size_t i = 0; i < val.size(); i++)
 					val[i] = tolower(val[i]);
-				request.keepAlive = (val == "keep-alive");
-			}
+
+				// HTTP/1.1 defaults to keep-alive; explicitly close only if "close"
+				if (val == "close")
+					request.keepAlive = false;
+				else if (val == "keep-alive")
+					request.keepAlive = true;
+				else
+					request.keepAlive = (request.version == "HTTP/1.1");
+			}	
 			else
 				request.keepAlive = (request.version == "HTTP/1.1");
 
