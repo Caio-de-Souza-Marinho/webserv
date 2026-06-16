@@ -8,3 +8,4 @@ tester
 cgi_tester
 single
 integration_tester
+test_uploads_dir/
