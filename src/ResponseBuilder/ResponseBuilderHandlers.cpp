@@ -57,7 +57,7 @@ Response	ResponseBuilder::handlePOST(const Request &request,
 
 	res.statusCode = 201;
 	res.headers["Content-Type"] = "text/plain";
-	res.headers["Location"] = filePath;
+	res.headers["Location"] = joinPath(route.path, fileName);
 	res.body = "File uploaded\n";
 	return (res);
 }
