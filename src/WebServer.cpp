@@ -237,11 +237,13 @@ void	WebServer::readClient(int fd)
 		client.readBuffer.append(buffer, bytes);
 		client.lastActivity = time(NULL);
 
+		// CORRIGIDO: checa 413 no nível do readBuffer também
 		if (client.server->config.maxBodySize > 0 && client.readBuffer.size() > client.server->config.maxBodySize + 8192)
 		{
 			client.request.keepAlive = false;
 			Response	response = responseBuilder->buildErrorResponse(413, client.server->config);
 			prepareResponse(client, response);
+			return ;
 		}
 	}
 
@@ -252,9 +254,10 @@ void	WebServer::readClient(int fd)
 	{
 		client.request.keepAlive = false;
 		Response	response = responseBuilder->buildErrorResponse(
-			client.request.errorCode ? client.request.errorCode : 400, 
+			client.request.errorCode ? client.request.errorCode : 400,
 			client.server->config);
 		prepareResponse(client, response);
+		return ;
 	}
 
 	if (state == RequestParser::COMPLETE)
@@ -274,6 +277,17 @@ void	WebServer::handleRequest(Client &client)
 	}
 	else if (route)
 	{
+		// NOVO: se a rota tem um limite próprio de body, verifica aqui
+		// (o parser usou o limite do server; se a rota é mais restritiva, aplica agora)
+		size_t routeLimit = route->maxBodySize;
+		if (routeLimit > 0 && client.request.body.size() > routeLimit)
+		{
+			client.request.keepAlive = false;
+			response = responseBuilder->buildErrorResponse(413, client.server->config);
+			prepareResponse(client, response);
+			return ;
+		}
+
 		// Is this request for a CGI script (path ends with a configured extension)?
 		const std::string	*interpreter = router->matchCGI(*route, client.request.path);
 		if (interpreter)

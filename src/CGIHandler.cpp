@@ -34,6 +34,7 @@ std::vector<std::string>	CGIHandler::buildEnv(const Request &request,
 	env.push_back("SCRIPT_NAME=" + request.path);
 	env.push_back("PATH_INFO=" + request.path);
 	env.push_back("SERVER_NAME=" + config.host);
+	env.push_back("REQUEST_URI=" + request.rawUri);
 
 	oss << config.port;
 	env.push_back("SERVER_PORT=" + oss.str());
@@ -118,14 +119,26 @@ bool	CGIHandler::execute(Client &client, const std::string &scriptPath, const st
 	int	pipeIn[2];	// parent writes request body  -> child stdin
 	int	pipeOut[2];	// child writes its output     -> parent reads
 
-	// Resolve the script to an absolute path: the child does chdir() into the
-	// script's directory, after which a relative path would no longer resolve.
+	// Resolve o script para path absoluto: o filho faz chdir() para o diretório
+	// do script, então um path relativo não funcionaria mais após isso.
 	std::string	absPath = scriptPath;
 	if (!scriptPath.empty() && scriptPath[0] != '/')
 	{
 		char	cwd[4096];
 		if (getcwd(cwd, sizeof(cwd)))
 			absPath = std::string(cwd) + "/" + scriptPath;
+	}
+
+	// CORREÇÃO: resolve o interpreter para path absoluto ANTES do fork.
+	// O filho faz chdir() para o diretório do script, então um path relativo
+	// como "./cgi_tester" deixa de existir após o chdir. Resolvendo aqui,
+	// no processo pai, o cwd ainda é o diretório raiz do servidor.
+	std::string	absInterpreter = interpreter;
+	if (!interpreter.empty() && interpreter[0] != '/')
+	{
+		char	cwd[4096];
+		if (getcwd(cwd, sizeof(cwd)))
+			absInterpreter = std::string(cwd) + "/" + interpreter;
 	}
 
 	if (pipe(pipeIn) == -1)
@@ -142,7 +155,7 @@ bool	CGIHandler::execute(Client &client, const std::string &scriptPath, const st
 	}
 
 	char	**envp = buildEnvp(buildEnv(client.request, absPath, client.server->config));
-	char	**argv = buildArgv(interpreter, absPath);
+	char	**argv = buildArgv(absInterpreter, absPath); // usa absInterpreter
 
 	pid_t	pid = fork();
 	if (pid == -1)

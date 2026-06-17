@@ -17,10 +17,12 @@ struct	Route
 	bool					autoindex;
 	std::string				uploadPath;
 	std::map<std::string, std::string>	cgiHandlers;
+	size_t					maxBodySize; // <-- NOVO: limite por rota (0 = herda do server)
 
 	Route() :
 		redirectCode(0),
-		autoindex(false)
+		autoindex(false),
+		maxBodySize(0) // <-- NOVO
 	{}
 };
 
