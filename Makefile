@@ -75,8 +75,8 @@ TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
 	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderPath.cpp \
 
 test: re
-	@c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o tester
-	./tester
+	@c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o my_tester
+	./my_tester
 
 clean:
 	@echo "${RED}Removing object files...${RESET}"
@@ -89,6 +89,6 @@ fclean:	clean
 re:	fclean all
 
 run:	re
-	./${NAME} ${TEST_FILE}
+	./${NAME} 
 
 .PHONY:	all clean fclean re run

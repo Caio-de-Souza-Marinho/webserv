@@ -94,5 +94,7 @@ Response	ResponseBuilder::handleDirectory(const std::string &fsPath, const std::
 	}
 	if (route.autoindex)
 		return (buildSimpleResponse(200, "text/html", generateAutoindex(dirPath, urlPath)));
+	if (!route.index.empty())
+		return(handleError(404, config));
 	return (handleError(403, config));
 }

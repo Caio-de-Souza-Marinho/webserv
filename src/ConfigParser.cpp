@@ -252,6 +252,13 @@ void	ConfigParser::parseLocation(Route &route)
 			route.cgiHandlers[extension] = interpreter;
 			expectToken(";");
 		}
+		// NOVO: client_max_body_size dentro de location
+		else if (token == "client_max_body_size")
+		{
+			route.maxBodySize = parseBodySize(_path,
+					requiredValue(_path, nextToken(), "client_max_body_size"));
+			expectToken(";");
+		}
 		else
 			throw configError(_path, "unknown location directive: " + token);
 	}
