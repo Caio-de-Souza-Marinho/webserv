@@ -6,7 +6,7 @@ int	main(int argc, char **argv)
 {
 	try
 	{
-		std::string	configPath = (argc >= 2) ? argv[1] : "config/42.conf";
+		std::string	configPath = (argc >= 2) ? argv[1] : "config/default.conf";
 		WebServer	server(configPath);
 		server.run();
 	}

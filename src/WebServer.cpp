@@ -4,7 +4,6 @@
 #include "../include/Router.hpp"
 #include "../include/ResponseBuilder.hpp"
 #include "../include/CGIHandler.hpp"
-#include <cerrno>
 
 volatile	sig_atomic_t	g_running = 1;
 
@@ -228,16 +227,12 @@ void	WebServer::readClient(int fd)
 
 		if (bytes < 0)
 		{
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				break ;
-			closeClient(fd);
-			return ;
+			break ;
 		}
 
 		client.readBuffer.append(buffer, bytes);
 		client.lastActivity = time(NULL);
 
-		// CORRIGIDO: checa 413 no nível do readBuffer também
 		if (client.server->config.maxBodySize > 0 && client.readBuffer.size() > client.server->config.maxBodySize + 8192)
 		{
 			client.request.keepAlive = false;
@@ -277,8 +272,6 @@ void	WebServer::handleRequest(Client &client)
 	}
 	else if (route)
 	{
-		// NOVO: se a rota tem um limite próprio de body, verifica aqui
-		// (o parser usou o limite do server; se a rota é mais restritiva, aplica agora)
 		size_t routeLimit = route->maxBodySize;
 		if (routeLimit > 0 && client.request.body.size() > routeLimit)
 		{
@@ -288,7 +281,6 @@ void	WebServer::handleRequest(Client &client)
 			return ;
 		}
 
-		// Is this request for a CGI script (path ends with a configured extension)?
 		const std::string	*interpreter = router->matchCGI(*route, client.request.path);
 		if (interpreter)
 		{
@@ -330,8 +322,6 @@ void	WebServer::writeClient(int fd)
 
 		if (sent < 0)
 		{
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				return ;
 			closeClient(fd);
 			return ;
 		}
