@@ -1,7 +1,6 @@
 #include "../include/WebServer.hpp"
 #include "../include/ResponseBuilder.hpp"
 #include "../include/Logger.hpp"
-#include <cerrno>
 #include <cstdlib>
 
 // Add the two CGI pipe fds to epoll so the main loop wakes up on them.
@@ -50,9 +49,6 @@ void	WebServer::handleCGI(Client &client)
 				client.request.body.erase(0, w);
 			else
 			{
-				if (errno == EAGAIN || errno == EWOULDBLOCK)
-					break ;			// pipe full, retry on next EPOLLOUT
-				// script closed its stdin (EPIPE) or other error: stop writing
 				client.request.body.clear();
 			}
 		}
