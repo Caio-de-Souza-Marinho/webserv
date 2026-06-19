@@ -4,6 +4,7 @@
 #include "../include/Router.hpp"
 #include "../include/ResponseBuilder.hpp"
 #include "../include/CGIHandler.hpp"
+#include <sstream>
 
 volatile	sig_atomic_t	g_running = 1;
 
@@ -254,11 +255,22 @@ void	WebServer::acceptClient(int serverFd)
 		client.server = fdToServer[serverFd];
 		client.lastActivity = time(NULL);
 		client.state = READING;
+		client.ip = inet_ntoa(addr.sin_addr);
+		client.port = ntohs(addr.sin_port);
 		client.parser = new RequestParser();
 
 		clients[clientFd] = client;
 
-		Logger::info("Client connected fd=" + intToStr(clientFd));
+		std::ostringstream	oss;
+
+		oss	<< "[CONNECT] fd=" 
+			<< clientFd 
+			<< " ip=" 
+			<< client.ip 
+			<< ":"
+			<< client.port;
+
+		Logger::info(oss.str());
 	}
 }
 
@@ -446,6 +458,17 @@ void	WebServer::closeClient(int fd)
 		removeFromEpoll(client.cgiOutputFd);
 		close(client.cgiOutputFd);
 	}
+
+	std::ostringstream	oss;
+
+	oss	<< "[DISCONNECT] fd=" 
+		<< fd
+		<< " ip=" 
+		<< client.ip 
+		<< ":"
+		<< client.port;
+
+	Logger::info(oss.str());
 
 	removeFromEpoll(fd);
 	close(fd);
