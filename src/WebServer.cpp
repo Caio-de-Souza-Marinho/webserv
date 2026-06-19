@@ -4,6 +4,7 @@
 #include "../include/Router.hpp"
 #include "../include/ResponseBuilder.hpp"
 #include "../include/CGIHandler.hpp"
+#include <sstream>
 
 volatile	sig_atomic_t	g_running = 1;
 
@@ -27,10 +28,40 @@ void	WebServer::modifyEpoll(int fd, uint32_t events)
 		Logger::error("epoll_ctl MOD failed");
 }
 
+void	WebServer::logAccess(const Client &client)
+{
+	std::ostringstream	oss;
+	int			status;
+
+	status = client.response.statusCode;
+
+	oss	<< client.ip
+		<< " \""
+		<< client.request.method
+		<< " "
+		<< client.request.rawUri
+		<< " "
+		<< client.request.version
+		<< "\" "
+		<< status
+		<< " "
+		<< client.response.body.size();
+
+	if (status >= 500)
+		Logger::error(oss.str());
+	else if (status >= 400)
+		Logger::warning(oss.str());
+	else
+		Logger::info(oss.str());
+}
+
 void	WebServer::prepareResponse(Client &client, const Response &response)
 {
+
 	// Copy the response into the client
 	client.response = response;
+
+	logAccess(client);
 
 	// Set Connection header according to keep-alive flag
 	if (client.request.keepAlive)
@@ -65,12 +96,65 @@ std::string	WebServer::intToStr(int n)
 	return (ss.str());
 }
 
+void	WebServer::printBanner(void)
+{
+	std::ostringstream	oss;
+
+	oss << "\n";
+	oss << "========================================\n";
+	oss << "               webserv\n";
+	oss << "========================================\n";
+	oss << " Event system	: epoll\n";
+	oss << " Servers	: " << servers.size() << "\n\n";
+
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		const ServerConfig	&config = servers[i].config;
+
+		oss << " [" << config.port << "] " << config.host << ":" << config.port << "\n";
+
+		for (size_t j = 0; j < config.routes.size(); j++)
+		{
+			const Route	&route = config.routes[j];
+
+			oss << "   " << route.path << " [";
+
+			for (std::set<std::string>::const_iterator it = route.methods.begin(); it != route.methods.end(); ++it)
+			{
+				if (it != route.methods.begin())
+					oss << ",";
+				oss << *it;
+			}
+
+			oss << "]";
+
+			if (!route.redirectUrl.empty())
+				oss << " -> " << route.redirectCode << " " << route.redirectUrl;
+
+			if (!route.cgiHandlers.empty())
+				oss << " [CGI]";
+			
+			if (!route.uploadPath.empty())
+				oss << " [UPLOAD]";
+
+			if (route.autoindex)
+				oss << " [AUTOINDEX]";
+
+			oss << "\n";
+		}
+		oss << "\n";
+	}
+
+	oss << " Ready to accept connections\n";
+	oss << "========================================\n";
+
+	Logger::info(oss.str());
+}
+
 // methods
 void	WebServer::run()
 {
 	struct	epoll_event	events[MAX_EVENTS];
-
-	Logger::info("Server running");
 
 	while (g_running)
 	{
@@ -201,11 +285,22 @@ void	WebServer::acceptClient(int serverFd)
 		client.server = fdToServer[serverFd];
 		client.lastActivity = time(NULL);
 		client.state = READING;
+		client.ip = inet_ntoa(addr.sin_addr);
+		client.port = ntohs(addr.sin_port);
 		client.parser = new RequestParser();
 
 		clients[clientFd] = client;
 
-		Logger::info("Client connected fd=" + intToStr(clientFd));
+		std::ostringstream	oss;
+
+		oss	<< "[CONNECT] fd=" 
+			<< clientFd 
+			<< " ip=" 
+			<< client.ip 
+			<< ":"
+			<< client.port;
+
+		Logger::info(oss.str());
 	}
 }
 
@@ -393,6 +488,17 @@ void	WebServer::closeClient(int fd)
 		removeFromEpoll(client.cgiOutputFd);
 		close(client.cgiOutputFd);
 	}
+
+	std::ostringstream	oss;
+
+	oss	<< "[DISCONNECT] fd=" 
+		<< fd
+		<< " ip=" 
+		<< client.ip 
+		<< ":"
+		<< client.port;
+
+	Logger::info(oss.str());
 
 	removeFromEpoll(fd);
 	close(fd);
