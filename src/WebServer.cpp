@@ -28,10 +28,40 @@ void	WebServer::modifyEpoll(int fd, uint32_t events)
 		Logger::error("epoll_ctl MOD failed");
 }
 
+void	WebServer::logAccess(const Client &client)
+{
+	std::ostringstream	oss;
+	int			status;
+
+	status = client.response.statusCode;
+
+	oss	<< client.ip
+		<< " \""
+		<< client.request.method
+		<< " "
+		<< client.request.rawUri
+		<< " "
+		<< client.request.version
+		<< "\" "
+		<< status
+		<< " "
+		<< client.response.body.size();
+
+	if (status >= 500)
+		Logger::error(oss.str());
+	else if (status >= 400)
+		Logger::warning(oss.str());
+	else
+		Logger::info(oss.str());
+}
+
 void	WebServer::prepareResponse(Client &client, const Response &response)
 {
+
 	// Copy the response into the client
 	client.response = response;
+
+	logAccess(client);
 
 	// Set Connection header according to keep-alive flag
 	if (client.request.keepAlive)
