@@ -69,7 +69,6 @@ WebServer::WebServer(const std::string &configPath)
 
 		// store the server and the mapping fd -> Server*
 		servers.push_back(server);
-      		Logger::info("Listening at " + configs[i].host + ":" + intToStr(configs[i].port));
 	}
 
 	// 4. Instantiate the helpers (they're stateless, one for each process is enough
@@ -80,6 +79,8 @@ WebServer::WebServer(const std::string &configPath)
 	// 5. make the map fd -> Server* now that servers is stable in memory
 	for (size_t i = 0; i < servers.size(); i++)
 		fdToServer[servers[i].fd] = &servers[i];
+
+	printBanner();
 }
 
 WebServer::~WebServer()

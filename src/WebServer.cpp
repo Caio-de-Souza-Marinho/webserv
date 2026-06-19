@@ -65,12 +65,65 @@ std::string	WebServer::intToStr(int n)
 	return (ss.str());
 }
 
+void	WebServer::printBanner(void)
+{
+	std::ostringstream	oss;
+
+	oss << "\n";
+	oss << "========================================\n";
+	oss << "               webserv\n";
+	oss << "========================================\n";
+	oss << " Event system	: epoll\n";
+	oss << " Servers	: " << servers.size() << "\n\n";
+
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		const ServerConfig	&config = servers[i].config;
+
+		oss << " [" << config.port << "] " << config.host << ":" << config.port << "\n";
+
+		for (size_t j = 0; j < config.routes.size(); j++)
+		{
+			const Route	&route = config.routes[j];
+
+			oss << "   " << route.path << " [";
+
+			for (std::set<std::string>::const_iterator it = route.methods.begin(); it != route.methods.end(); ++it)
+			{
+				if (it != route.methods.begin())
+					oss << ",";
+				oss << *it;
+			}
+
+			oss << "]";
+
+			if (!route.redirectUrl.empty())
+				oss << " -> " << route.redirectCode << " " << route.redirectUrl;
+
+			if (!route.cgiHandlers.empty())
+				oss << " [CGI]";
+			
+			if (!route.uploadPath.empty())
+				oss << " [UPLOAD]";
+
+			if (route.autoindex)
+				oss << " [AUTOINDEX]";
+
+			oss << "\n";
+		}
+		oss << "\n";
+	}
+
+	oss << " Ready to accept connections\n";
+	oss << "========================================\n";
+
+	Logger::info(oss.str());
+}
+
 // methods
 void	WebServer::run()
 {
 	struct	epoll_event	events[MAX_EVENTS];
-
-	Logger::info("Server running");
 
 	while (g_running)
 	{
