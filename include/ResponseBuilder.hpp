@@ -6,6 +6,7 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Config.hpp"
+#include "MultipartParser.hpp"
 
 class	ResponseBuilder
 {
@@ -36,6 +37,8 @@ class	ResponseBuilder
 		bool		isSafeFilename(const std::string &name) const;
 		bool		isParentWritable(const std::string &path) const;
 		std::string	extractParentPath(const std::string &path) const;
+		Response	handleMultipartPost(const Request &request, const Route &route, const ServerConfig &config);
+		Response	handleRawPost(const Request &request, const Route &route, const ServerConfig &config);
 };
 
 #endif

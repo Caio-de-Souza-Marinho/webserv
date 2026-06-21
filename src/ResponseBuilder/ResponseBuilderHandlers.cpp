@@ -32,18 +32,60 @@ Response	ResponseBuilder::handleGET(const Request &request, const Route &route, 
 	return (buildSimpleResponse(200, getContentType(path), body));
 }
 
-// stubs handles
 Response	ResponseBuilder::handlePOST(const Request &request,
+	const Route &route, const ServerConfig &config)
+{
+	if (route.uploadPath.empty())
+		return (handleError(403, config));
+	if (!fileExists(route.uploadPath) || !isDirectory(route.uploadPath))
+		return (handleError(500, config));
+
+	MultipartParser	parser;
+	std::map<std::string, std::string>::const_iterator	ct = request.headers.find("content-type");
+
+	if (ct != request.headers.end() && parser.isMultipart(ct->second))
+		return (handleMultipartPost(request, route, config));
+	return (handleRawPost(request, route, config));
+}
+
+Response	ResponseBuilder::handleMultipartPost(const Request &request,
+	const Route &route, const ServerConfig &config)
+{
+	MultipartParser			parser;
+	std::vector<MultipartPart>	files;
+	std::string			ct = request.headers.find("content-type")->second;
+
+	files = parser.parse(ct, request.body);
+
+	if (files.empty())
+		return (handleError(400, config));
+
+	size_t	saved = 0;
+	for (size_t i = 0; i < files.size(); i++)
+	{
+		if (!isSafeFilename(files[i].filename))
+			continue ;	
+		std::string	filePath = joinPath(route.uploadPath, files[i].filename);
+		if (writeFile(filePath, files[i].content))
+			saved++;
+	}
+
+	if (saved == 0)
+		return (handleError(500, config));
+
+	Response	res;
+	res.statusCode = 201;
+	res.headers["Content-Type"] = "text/plain";
+	res.body = "Upload OK\n";
+	return (res);
+}
+
+Response	ResponseBuilder::handleRawPost(const Request &request,
 	const Route &route, const ServerConfig &config)
 {
 	std::string	fileName;
 	std::string	filePath;
 	Response	res;
-
-	if (route.uploadPath.empty())
-		return (handleError(403, config));
-	if (!fileExists(route.uploadPath) || !isDirectory(route.uploadPath))
-		return (handleError(500, config));
 
 	fileName = extractUploadFilename(request);
 	if (fileName.empty())
