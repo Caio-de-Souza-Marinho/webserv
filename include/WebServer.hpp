@@ -48,13 +48,14 @@ class	WebServer
 		void		readClient(int fd);
 		void		writeClient(int fd);
 		void		handleRequest(Client &client);
-		void		handleCGI(Client &client);
+		void		handleCGIRead(Client &client);
+		void		handleCGIWrite(Client &client);
 		void		registerCgi(Client &client);
 		void		finishCgi(Client &client);
 		void		handleCgiTimeout(Client &client);
 		Response	parseCgiOutput(const std::string &raw);
 		void		closeClient(int fd);
-		void		checkTimeouts();
+		void		checkTimeouts(void);
 		void		modifyEpoll(int fd, uint32_t events);
 		void		removeFromEpoll(int fd);
 		void		setNonBlocking(int fd);

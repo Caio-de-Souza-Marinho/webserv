@@ -9,6 +9,7 @@
 //   (no body -> close it right away so the script sees EOF on stdin)
 void	WebServer::registerCgi(Client &client)
 {
+	client.cgiBodyOffset = 0;
 	struct epoll_event	ev;
 
 	std::memset(&ev, 0, sizeof(ev));
@@ -32,6 +33,7 @@ void	WebServer::registerCgi(Client &client)
 	}
 }
 
+/*
 // Called by run() whenever one of the client's CGI pipes is ready.
 // We don't know which fd/event fired, so we just try both operations;
 // the fd that isn't ready returns EAGAIN, which we ignore.
@@ -47,10 +49,6 @@ void	WebServer::handleCGI(Client &client)
 					client.request.body.size());
 			if (w > 0)
 				client.request.body.erase(0, w);
-			else
-			{
-				client.request.body.clear();
-			}
 		}
 		if (client.request.body.empty())
 		{
@@ -82,6 +80,59 @@ void	WebServer::handleCGI(Client &client)
 
 	client.lastActivity = time(NULL);
 }
+*/
+
+void	WebServer::handleCGIWrite(Client &client)
+{
+	if (client.cgiInputFd == -1)
+		return ;
+
+	const std::string	&body = client.request.body;
+	size_t			remaining = body.size() - client.cgiBodyOffset;
+
+	if (remaining == 0)
+	{
+		removeFromEpoll(client.cgiInputFd);
+		close(client.cgiInputFd);
+		client.cgiInputFd = -1;
+		return ;
+	}
+
+	ssize_t	w = write(client.cgiInputFd, body.c_str() + client.cgiBodyOffset, remaining);
+
+	if (w > 0)
+		client.cgiBodyOffset += w;
+
+	if (client.cgiBodyOffset >= body.size())
+	{
+		removeFromEpoll(client.cgiInputFd);
+		close(client.cgiInputFd);
+		client.cgiInputFd = -1;
+	}
+	client.lastActivity = time(NULL);
+}
+
+void	WebServer::handleCGIRead(Client &client)
+{
+	if (client.cgiOutputFd == -1)
+		return ;
+
+	char	buf[8192];
+	while (true)
+	{
+		ssize_t	r = read(client.cgiOutputFd, buf, sizeof(buf));
+		if (r > 0)
+			client.cgiBuffer.append(buf, r);
+		else if (r == 0)
+		{
+			finishCgi(client);
+			return ;
+		}
+		else
+			break ;
+	}
+	client.lastActivity = time(NULL);
+}
 
 // The script closed its stdout. Reap it, decide success/failure, build the
 // HTTP response and flip the client over to WRITING.
@@ -102,7 +153,21 @@ void	WebServer::finishCgi(Client &client)
 		client.cgiInputFd = -1;
 	}
 
-	waitpid(client.cgiPid, &status, 0);
+	int	waited = 0;
+	pid_t	result = 0;
+	while (waited < 50)
+	{
+		result = waitpid(client.cgiPid, &status, WNOHANG);
+		if (result != 0)
+			break ;
+		usleep(10000);
+		waited++;
+	}
+	if (result == 0)
+	{
+		kill(client.cgiPid, SIGKILL);
+		waitpid(client.cgiPid, &status, 0);
+	}
 	client.cgiPid = -1;
 
 	Response	response;
