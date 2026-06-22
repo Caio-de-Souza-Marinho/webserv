@@ -201,6 +201,7 @@ bool	CGIHandler::execute(Client &client, const std::string &scriptPath, const st
 	client.cgiOutputFd = pipeOut[0];	// we read the result here
 	client.cgiBuffer.clear();
 	client.cgiDone     = false;
+	client.cgiBodyOffset = 0;
 
 	setNonBlocking(client.cgiInputFd);
 	setNonBlocking(client.cgiOutputFd);

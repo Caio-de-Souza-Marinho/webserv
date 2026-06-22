@@ -38,6 +38,7 @@ class	Client
 		int		cgiOutputFd;
 		std::string	cgiBuffer;
 		bool		cgiDone;
+		size_t		cgiBodyOffset;
 		std::string	ip;
 		int		port;
 };
