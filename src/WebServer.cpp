@@ -354,11 +354,44 @@ void	WebServer::readClient(int fd)
 		handleRequest(client);
 }
 
+void	WebServer::handleSessionTest(Client &client)
+{
+	std::string						cookieHeader;
+	std::map<std::string, std::string>::const_iterator	it;
+
+	it = client.request.headers.find("cookie");
+	if (it != client.request.headers.end())
+		cookieHeader = it->second;
+
+	bool	isNew = false;
+	std::string	sessionId = sessionManager->resolveSession(cookieHeader, isNew);
+	int		visits = sessionManager->incrementVisits(sessionId);
+
+	std::ostringstream	body;
+	body << "<html><body><h1>Session Test</h1>"
+		<< "<p>Visits in this session: " << visits << "</p>"
+		<< "<p>Session ID: " << sessionId << "</p>"
+		<< "</body></html>";
+	Response	res;
+	res.statusCode = 200;
+	res.headers["Content-type"] = "text/html";
+	if (isNew)
+		res.headers["Set-Cookie"] = "session_id=" + sessionId + "; Path=/";
+	res.body = body.str();
+
+	prepareResponse(client, res);
+}
+
 void	WebServer::handleRequest(Client &client)
 {
 	const Route	*route;
 	Response	response;
 
+	if (client.request.path == "/session-test")
+	{
+		handleSessionTest(client);
+		return ;
+	}
 	route = router->matchRoute(client.request, client.server->config);
 
 	if (route && !router->isMethodAllowed(*route, client.request.method))
