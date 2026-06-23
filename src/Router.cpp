@@ -64,33 +64,76 @@ bool	Router::isMethodAllowed(const Route &route, const std::string &method) cons
 	return (route.methods.find(method) != route.methods.end());
 }
 
+// -- cgiExtEnd
+// Returns the index just past `ext` if `path` contains it at a segment boundary
+// (i.e. the extension is followed by end-of-string or '/', as in
+// "/cgi-bin/app.py" or "/cgi-bin/app.py/extra"). Otherwise std::string::npos.
+static std::string::size_type	cgiExtEnd(const std::string &path, const std::string &ext)
+{
+	std::string::size_type	pos = path.find(ext);
+
+	while (pos != std::string::npos)
+	{
+		std::string::size_type	end = pos + ext.size();
+		if (end == path.size() || path[end] == '/')
+			return (end);
+		pos = path.find(ext, pos + 1);
+	}
+	return (std::string::npos);
+}
+
 // -- matchCGI
-// Walk the route's extension->interpreter map. If the request path ends with
-// one of the registered extensions (e.g. ".py"), return a pointer to the
-// interpreter string for that extension. Otherwise NULL (not a CGI request).
+// Walk the route's extension->interpreter map. If the request path contains one
+// of the registered extensions (e.g. ".py") at a segment boundary, return a
+// pointer to the interpreter string for that extension. Otherwise NULL.
 const std::string*	Router::matchCGI(const Route &route, const std::string &path) const
 {
 	std::map<std::string, std::string>::const_iterator	it;
 
 	for (it = route.cgiHandlers.begin(); it != route.cgiHandlers.end(); ++it)
 	{
-		const std::string	&ext = it->first;
-
-		if (path.size() >= ext.size()
-			&& path.compare(path.size() - ext.size(), ext.size(), ext) == 0)
+		if (cgiExtEnd(path, it->first) != std::string::npos)
 			return (&it->second);
 	}
 	return (NULL);
 }
 
+// -- splitCgiPath
+// Splits a CGI request path into the script portion and PATH_INFO. For
+// "/cgi-bin/app.py/extra/path" with a ".py" handler:
+//   scriptName = "/cgi-bin/app.py", pathInfo = "/extra/path".
+// When there is no extra component, pathInfo is left empty.
+void	Router::splitCgiPath(const Route &route, const std::string &path,
+		std::string &scriptName, std::string &pathInfo) const
+{
+	std::map<std::string, std::string>::const_iterator	it;
+
+	scriptName = path;
+	pathInfo.clear();
+	for (it = route.cgiHandlers.begin(); it != route.cgiHandlers.end(); ++it)
+	{
+		std::string::size_type	end = cgiExtEnd(path, it->first);
+		if (end != std::string::npos)
+		{
+			scriptName = path.substr(0, end);
+			pathInfo   = path.substr(end);
+			return ;
+		}
+	}
+}
 
 std::string	Router::resolvePath(const Route &route, const Request &request) const
+{
+	return (resolvePath(route, request.path));
+}
+
+std::string	Router::resolvePath(const Route &route, const std::string &reqPath) const
 {
 	std::string relative;
 
 	if (route.path == "/")
-		return (route.root + request.path);
-	
-	relative = request.path.substr(route.path.size());
+		return (route.root + reqPath);
+
+	relative = reqPath.substr(route.path.size());
 	return (route.root + relative);
 }
