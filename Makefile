@@ -39,7 +39,6 @@ SRCS	= ${SRC_DIR}/main.cpp \
 	  ${SRC_DIR}/Client.cpp \
 	  ${SRC_DIR}/Server.cpp \
 	  ${SRC_DIR}/CGIHandler.cpp \
-	  ${SRC_DIR}/SessionManager.cpp \
 
 OBJS	= ${SRCS:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.o}
 
