@@ -279,9 +279,9 @@ bool	RequestParser::parseBody(Request &request, std::string &buffer)
 		{
 			request.isComplete = true;
 			state = COMPLETE;
+			return (true);
 		}
-
-		return (true);
+		return (false);
 	}
 
 	// chunked body

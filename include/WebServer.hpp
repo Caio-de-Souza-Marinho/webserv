@@ -20,10 +20,12 @@
 
 #include "Client.hpp"
 #include "Server.hpp"
+#include "SessionManager.hpp"
 
 class Router;
 class ResponseBuilder;
 class CGIHandler;
+class SessionManager;
 
 extern volatile sig_atomic_t	g_running;
 void	signalHandler(int);
@@ -43,6 +45,7 @@ class	WebServer
 		Router				*router;
 		ResponseBuilder			*responseBuilder;
 		CGIHandler			*cgiHandler;
+		SessionManager			*sessionManager;
 
 		void		acceptClient(int serverFd);
 		void		readClient(int fd);
@@ -63,6 +66,7 @@ class	WebServer
 		void		prepareResponse(Client &client, const Response &response);
 		void		printBanner(void);
 		void		logAccess(const Client &client);	
+		void		handleSessionTest(Client &client);
 };
 
 #endif

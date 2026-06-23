@@ -20,7 +20,8 @@ void	CGIHandler::setNonBlocking(int fd) const
 
 // Builds the CGI/1.1 environment as a vector of "KEY=VALUE" strings.
 std::vector<std::string>	CGIHandler::buildEnv(const Request &request,
-	const std::string &scriptPath, const ServerConfig &config) const
+	const std::string &scriptPath, const ServerConfig &config,
+	const std::string &scriptName, const std::string &pathInfo) const
 {
 	std::vector<std::string>	env;
 	std::ostringstream		oss;
@@ -31,8 +32,8 @@ std::vector<std::string>	CGIHandler::buildEnv(const Request &request,
 	env.push_back("REQUEST_METHOD=" + request.method);
 	env.push_back("QUERY_STRING=" + request.query);
 	env.push_back("SCRIPT_FILENAME=" + scriptPath);
-	env.push_back("SCRIPT_NAME=" + request.path);
-	env.push_back("PATH_INFO=" + request.path);
+	env.push_back("SCRIPT_NAME=" + scriptName);
+	env.push_back("PATH_INFO=" + pathInfo);
 	env.push_back("SERVER_NAME=" + config.host);
 	env.push_back("REQUEST_URI=" + request.rawUri);
 
@@ -114,7 +115,8 @@ void	CGIHandler::freeArgv(char **argv) const
 	delete [] argv;
 }
 
-bool	CGIHandler::execute(Client &client, const std::string &scriptPath, const std::string &interpreter)
+bool	CGIHandler::execute(Client &client, const std::string &scriptPath, const std::string &interpreter,
+	const std::string &scriptName, const std::string &pathInfo)
 {
 	int	pipeIn[2];	// parent writes request body  -> child stdin
 	int	pipeOut[2];	// child writes its output     -> parent reads
@@ -154,7 +156,7 @@ bool	CGIHandler::execute(Client &client, const std::string &scriptPath, const st
 		return (false);
 	}
 
-	char	**envp = buildEnvp(buildEnv(client.request, absPath, client.server->config));
+	char	**envp = buildEnvp(buildEnv(client.request, absPath, client.server->config, scriptName, pathInfo));
 	char	**argv = buildArgv(absInterpreter, absPath); // usa absInterpreter
 
 	pid_t	pid = fork();

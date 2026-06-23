@@ -3,11 +3,12 @@
 #include "../include/Router.hpp"
 #include "../include/ResponseBuilder.hpp"
 #include "../include/CGIHandler.hpp"
+#include "../include/SessionManager.hpp"
 #include "../include/Logger.hpp"
 #include "../include/RequestParser.hpp"
 
 WebServer::WebServer(const std::string &configPath)
-	: epfd(-1), router(NULL), responseBuilder(NULL), cgiHandler(NULL)
+	: epfd(-1), router(NULL), responseBuilder(NULL), cgiHandler(NULL), sessionManager(NULL)
 {
 	// Ignore SIGPIPE: writing to a socket/pipe whose other end is closed
 	// (a disconnected client, or a CGI that exited) must not kill the server.
@@ -75,6 +76,7 @@ WebServer::WebServer(const std::string &configPath)
 	router		= new Router();
 	responseBuilder	= new ResponseBuilder();
 	cgiHandler	= new CGIHandler();
+	sessionManager	= new SessionManager();
 
 	// 5. make the map fd -> Server* now that servers is stable in memory
 	for (size_t i = 0; i < servers.size(); i++)
@@ -103,4 +105,5 @@ WebServer::~WebServer()
 	delete router;
 	delete responseBuilder;
 	delete cgiHandler;
+	delete sessionManager;
 }
