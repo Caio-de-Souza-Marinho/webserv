@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Teste de Upload</title>
+</head>
+<body>
+	<h1>Teste de Upload (multipart/form-data)</h1>
+
+	<h2>Um arquivo</h2>
+	<form action="/uploads" method="POST" enctype="multipart/form-data">
+		<input type="file" name="file">
+		<button type="submit">Enviar</button>
+	</form>
+
+	<h2>Multiplos arquivos</h2>
+	<form action="/uploads" method="POST" enctype="multipart/form-data">
+		<input type="file" name="file1">
+		<input type="file" name="file2">
+		<button type="submit">Enviar 2</button>
+	</form>
+</body>
+</html>
