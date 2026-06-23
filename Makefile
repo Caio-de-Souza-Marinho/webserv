@@ -38,6 +38,7 @@ SRCS	= ${SRC_DIR}/main.cpp \
 	  ${SRC_DIR}/Client.cpp \
 	  ${SRC_DIR}/Server.cpp \
 	  ${SRC_DIR}/CGIHandler.cpp \
+	  ${SRC_DIR}/SessionManager.cpp \
 
 OBJS	= ${SRCS:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.o}
 
@@ -73,6 +74,7 @@ TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
 	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderAutoindex.cpp \
 	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderFile.cpp \
 	     ${SRC_DIR}/ResponseBuilder/ResponseBuilderPath.cpp \
+	     ${SRC_DIR}/SessionManager.cpp \
 
 test: re
 	@c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o my_tester
