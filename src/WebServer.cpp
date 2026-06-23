@@ -379,11 +379,15 @@ void	WebServer::handleRequest(Client &client)
 		const std::string	*interpreter = router->matchCGI(*route, client.request.path);
 		if (interpreter)
 		{
-			std::string	scriptPath = router->resolvePath(*route, client.request);
+			std::string	scriptName;
+			std::string	pathInfo;
+
+			router->splitCgiPath(*route, client.request.path, scriptName, pathInfo);
+			std::string	scriptPath = router->resolvePath(*route, scriptName);
 
 			if (access(scriptPath.c_str(), F_OK) != 0)
 				response = responseBuilder->buildErrorResponse(404, client.server->config);
-			else if (cgiHandler->execute(client, scriptPath, *interpreter))
+			else if (cgiHandler->execute(client, scriptPath, *interpreter, scriptName, pathInfo))
 			{
 				// CGI forked successfully: hand the pipes over to epoll and
 				// let handleCGI() drive it. Nothing to write yet.
