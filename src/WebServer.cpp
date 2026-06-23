@@ -425,7 +425,7 @@ void	WebServer::handleRequest(Client &client)
 			router->splitCgiPath(*route, client.request.path, scriptName, pathInfo);
 			std::string	scriptPath = router->resolvePath(*route, scriptName);
 
-			if (cgiHandler->execute(client, scriptPath, *interpreter))
+			if (cgiHandler->execute(client, scriptPath, *interpreter, scriptName, pathInfo))
 			{
 				registerCgi(client);
 				return ;
