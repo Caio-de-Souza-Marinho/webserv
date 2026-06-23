@@ -25,6 +25,7 @@ std::vector<std::string>	CGIHandler::buildEnv(const Request &request,
 {
 	std::vector<std::string>	env;
 	std::ostringstream		oss;
+	std::string			effectivePathInfo = pathInfo.empty() ? scriptName : pathInfo;
 
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
@@ -33,7 +34,7 @@ std::vector<std::string>	CGIHandler::buildEnv(const Request &request,
 	env.push_back("QUERY_STRING=" + request.query);
 	env.push_back("SCRIPT_FILENAME=" + scriptPath);
 	env.push_back("SCRIPT_NAME=" + scriptName);
-	env.push_back("PATH_INFO=" + pathInfo);
+	env.push_back("PATH_INFO=" + effectivePathInfo);
 	env.push_back("SERVER_NAME=" + config.host);
 	env.push_back("REQUEST_URI=" + request.rawUri);
 
