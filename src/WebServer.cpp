@@ -160,6 +160,8 @@ void	WebServer::run()
 	{
 		while (true)
 		{
+			if (!g_running)
+				break;
 			int	n = epoll_wait(epfd, events, MAX_EVENTS, TIMEOUT_MS);
 
 			if (n == -1)
@@ -178,6 +180,8 @@ void	WebServer::run()
 			if (n == 0)
 			{
 				checkTimeouts();
+				if (!g_running)
+					break;
 				continue ;
 			}
 
