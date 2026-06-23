@@ -17,6 +17,7 @@ Client::Client() :
 	cgiOutputFd(-1),
 	cgiBuffer(),
 	cgiDone(false),
+	cgiBodyOffset(0),
 	ip(),
 	port(0)
 {}

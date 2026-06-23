@@ -202,12 +202,19 @@ void	WebServer::run()
 					for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
 					{
 						Client &client = it->second;
-						if (fd == client.cgiOutputFd || fd == client.cgiInputFd)
-						{
-							handleCGI(client);
-							isCgiFd = true;
-							break ;
-						}
+						if (fd == client.cgiOutputFd)
+	  					{
+	  						handleCGIRead(client);
+	  						isCgiFd = true;
+	  						break ;
+	  					}
+
+						if (fd == client.cgiInputFd)
+	  					{
+	  						handleCGIWrite(client);
+	  						isCgiFd = true;
+	  						break ;
+	  					}
 					}
 					if (isCgiFd)
 						continue ;
@@ -418,12 +425,8 @@ void	WebServer::handleRequest(Client &client)
 			router->splitCgiPath(*route, client.request.path, scriptName, pathInfo);
 			std::string	scriptPath = router->resolvePath(*route, scriptName);
 
-			if (access(scriptPath.c_str(), F_OK) != 0)
-				response = responseBuilder->buildErrorResponse(404, client.server->config);
-			else if (cgiHandler->execute(client, scriptPath, *interpreter, scriptName, pathInfo))
+			if (cgiHandler->execute(client, scriptPath, *interpreter))
 			{
-				// CGI forked successfully: hand the pipes over to epoll and
-				// let handleCGI() drive it. Nothing to write yet.
 				registerCgi(client);
 				return ;
 			}
@@ -454,6 +457,8 @@ void	WebServer::writeClient(int fd)
 
 		if (sent < 0)
 		{
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				return ;
 			closeClient(fd);
 			return ;
 		}
@@ -553,7 +558,7 @@ void	WebServer::checkTimeouts()
 		// A CGI that runs too long gets killed and answered with 504.
 		if (client.state == CGI_RUNNING)
 		{
-			if (now - client.lastActivity > 10)
+			if (now - client.lastActivity > 60)
 				handleCgiTimeout(client);
 			continue ;
 		}
