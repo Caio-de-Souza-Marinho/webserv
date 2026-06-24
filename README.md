@@ -111,14 +111,20 @@ classDiagram
         -Router* router
         -ResponseBuilder* responseBuilder
         -CGIHandler* cgiHandler
+        -SessionManager* sessionManager
         +run()
         -acceptClient(int)
         -readClient(int)
         -writeClient(int)
         -handleRequest(Client&)
-        -handleCGI(Client&)
+        -handleCGIRead(Client&)
+        -handleCGIWrite(Client&)
+        -registerCgi(Client&)
+        -finishCgi(Client&)
+        -parseCgiOutput(string&) Response
         -closeClient(int)
         -checkTimeouts()
+        -logAccess(Client&)
     }
 
     class Server {
@@ -130,15 +136,22 @@ classDiagram
         +int fd
         +string readBuffer
         +string writeBuffer
+        +size_t writeOffset
         +Request request
         +Response response
         +ClientState state
+        +bool requestComplete
         +time_t lastActivity
         +Server* server
         +RequestParser* parser
         +pid_t cgiPid
         +int cgiInputFd
         +int cgiOutputFd
+        +string cgiBuffer
+        +bool cgiDone
+        +size_t cgiBodyOffset
+        +string ip
+        +int port
     }
 
     class ServerConfig {
@@ -159,6 +172,7 @@ classDiagram
         +bool autoindex
         +string uploadPath
         +map~string,string~ cgiHandlers
+        +size_t maxBodySize
     }
 
     class RequestParser {
@@ -180,11 +194,19 @@ classDiagram
     }
 
     class ResponseBuilder {
-        +buildResponse(Request&, Route*, ServerConfig&)
-        +buildErrorResponse(int, ServerConfig&)
+        +buildResponse(Request&, Route*, ServerConfig&) Response
+        +buildErrorResponse(int, ServerConfig&) Response
         -handleGET()
         -handlePOST()
         -handleDELETE()
+        -handleDirectory()
+        -handleRedirect()
+        -handleMultipartPost()
+        -handleRawPost()
+    }
+
+    class MultipartParser {
+        +parse(body, boundary)
     }
 
     class Response {
@@ -195,16 +217,24 @@ classDiagram
     }
 
     class CGIHandler {
-        +execute(Client&, string scriptPath, string interpreter)
+        +execute(Client&, scriptPath, interpreter, scriptName, pathInfo) bool
         -buildEnv()
         -buildEnvp()
         -buildArgv()
     }
 
     class Router {
-        +matchRoute(Request&, ServerConfig&) const
-        +isMethodAllowed(Route&, string) const
-        +resolvePath(Route&, Request&) const
+        +matchRoute(Request&, ServerConfig&) const Route*
+        +isMethodAllowed(Route&, string) const bool
+        +resolvePath(Route&, Request&) const string
+        +matchCGI(Route&, path) const string*
+        +splitCgiPath(Route&, path, scriptName, pathInfo)
+    }
+
+    class SessionManager {
+        +resolveSession(cookieHeader, isNew&) string
+        +incrementVisits(sessionId) int
+        -generateSessionId() string
     }
 
     class ConfigParser {
@@ -217,6 +247,7 @@ classDiagram
     WebServer "1" *-- "1" Router
     WebServer "1" *-- "1" ResponseBuilder
     WebServer "1" *-- "1" CGIHandler
+    WebServer "1" *-- "1" SessionManager
     WebServer "1" --> "0..*" Client : manages
     Client --> Server : points to
     Server --> ServerConfig : owns
@@ -224,8 +255,9 @@ classDiagram
     Client --> RequestParser : owns
     Client --> Request : contains
     Client --> Response : contains
-    WebServer --> ConfigParser : uses
+    WebServer --> ConfigParser : uses at startup
     ResponseBuilder --> Response : creates
+    ResponseBuilder --> MultipartParser : uses
     Router --> Route : uses
     CGIHandler --> Client : modifies
 ```
@@ -233,78 +265,55 @@ classDiagram
 ### Request lifecycle
 ```mermaid
 flowchart TD
-    subgraph "Connection Setup"
-        A[Client connects] --> B[WebServer::acceptClient]
-        B --> C[Set socket non-blocking<br/>Add to epoll with EPOLLIN]
-    end
+    A([Client connects]) --> B[acceptClient\nset non-blocking, add to epoll]
+    B --> LOOP{epoll event}
 
-    subgraph "Read & Parse Loop"
-        C --> D{epoll event}
-        D -->|EPOLLIN| E[readClient]
-        E --> F[Append data to readBuffer]
-        F --> G[RequestParser::parse]
-        G -->|"Parse error"| ERR1[Build 400 Bad Request] --> WRITE1[State = WRITING]
-        G -->|Incomplete| D
-        G -->|Complete| H[handleRequest]
-    end
+    LOOP -->|EPOLLIN on client fd| C[readClient\nappend to readBuffer]
+    C --> D[RequestParser::parse]
+    D -->|incomplete| LOOP
+    D -->|parse error| ERR[Build error response]
+    D -->|complete| E[handleRequest]
 
-    subgraph "Routing"
-        H --> I[Router::matchRoute]
-        I -->|"No matching route"| ERR2[Build 404 Not Found] --> WRITE2[State = WRITING]
-        I -->|"Route found"| J{Method allowed?}
-        J -->|No| ERR3[Build 405 Method Not Allowed] --> WRITE3[State = WRITING]
-        J -->|Yes| K[Resolve physical path]
-    end
+    E --> F[SessionManager::resolveSession\nset/read cookie]
+    F --> G[Router::matchRoute]
+    G -->|no match| ERR
+    G -->|method not allowed| ERR
+    G -->|redirect route| ERR
 
-    subgraph "CGI Branch"
-        K -->|"CGI extension matched"| L[CGIHandler::execute]
-        L --> M[Fork child process<br/>Setup pipes]
-        M --> N[Add cgiOutputFd to epoll<br/>State = CGI_RUNNING]
-        N --> O{epoll event on CGI pipe}
-        O -->|"EPOLLIN stdout"| P[Read from cgiOutputFd<br/>Append to cgiBuffer]
-        P -->|"Still running"| O
-        P -->|EOF| Q[waitpid, collect exit status]
-        O -->|"EPOLLOUT stdin"| R[Write request body to cgiInputFd]
-        R -->|"More data"| O
-        R -->|Done| S[Close cgiInputFd]
-        Q --> T{CGI exit status}
-        T -->|0| U[Build 200 Response from cgiBuffer]
-        T -->|"Non-zero"| V[Build 502 Bad Gateway]
-        U --> WRITE4[State = WRITING]
-        V --> WRITE5[State = WRITING]
-    end
+    G -->|CGI extension matched| H[CGIHandler::execute\nfork + pipe setup]
+    H -->|fork failed| ERR
+    H -->|ok| I[registerCgi\nadd pipes to epoll\nstate = CGI_RUNNING]
 
-    subgraph "Static File Branch"
-        K -->|"Not CGI"| W[ResponseBuilder::buildResponse]
-        W --> X{File/directory exists?}
-        X -->|No| ERR4[Build 404 Not Found] --> WRITE6[State = WRITING]
-        X -->|"Directory & autoindex off"| ERR5[Build 403 Forbidden] --> WRITE7[State = WRITING]
-        X -->|"Directory & autoindex on"| Y[Generate directory listing]
-        X -->|File| Z[Read file content]
-        Y --> RESP[Build 200 Response]
-        Z --> RESP
-        RESP --> WRITE8[State = WRITING]
-    end
+    I --> LOOP
+    LOOP -->|EPOLLOUT on cgiInputFd| J[handleCGIWrite\nwrite body to CGI stdin]
+    J -->|done| J1[close cgiInputFd]
+    J1 --> LOOP
+    LOOP -->|EPOLLIN on cgiOutputFd| K[handleCGIRead\nread CGI stdout into cgiBuffer]
+    K -->|still running| LOOP
+    K -->|EOF| L[finishCgi\nwaitpid]
+    L --> M[parseCgiOutput\nparse headers + body]
+    M --> WRITE
 
-    subgraph "Write & Cleanup"
-        WRITE1 & WRITE2 & WRITE3 & WRITE4 & WRITE5 & WRITE6 & WRITE7 & WRITE8 --> AA[modifyEpoll to EPOLLOUT]
-        AA --> AB[writeClient]
-        AB --> AC[Send writeBuffer<br/>Advance writeOffset]
-        AC --> AD{Fully sent?}
-        AD -->|No| AB
-        AD -->|Yes| AE{Keep-Alive?}
-        AE -->|Yes| AF[Reset client<br/>State = READING]
-        AF --> D
-        AE -->|No| AG[closeClient]
-    end
+    G -->|static route| N[ResponseBuilder::buildResponse]
+    N -->|GET: file/dir| O[serve file or autoindex]
+    N -->|POST: upload| P[handleMultipartPost\nor handleRawPost]
+    N -->|DELETE| Q[remove file]
+    O & P & Q --> WRITE
+    N -->|error| ERR
 
-    subgraph "Timeout Handling"
-        D -->|Timeout| TO[checkTimeouts]
-        TO -->|Exceeded| ERR6[Build 408 Request Timeout] --> WRITE9[State = WRITING]
-        TO -->|"Still alive"| D
-        O -->|Timeout| TO2[CGI timeout?]
-        TO2 -->|Yes| KILL[Kill CGI process<br/>Build 504 Gateway Timeout] --> WRITE10[State = WRITING]
-    end
+    ERR --> WRITE[prepareResponse\nserialize into writeBuffer\nstate = WRITING]
+    WRITE --> LOOP
+
+    LOOP -->|EPOLLOUT on client fd| R[writeClient\nsend writeBuffer chunk]
+    R -->|more data| R
+    R -->|fully sent| S{Keep-Alive?}
+    S -->|yes| T[reset client state = READING]
+    T --> LOOP
+    S -->|no| U([closeClient])
+
+    LOOP -->|timeout check| V{checkTimeouts}
+    V -->|client idle| ERR
+    V -->|CGI timeout| W[kill CGI process] --> ERR
 ```
 
 ## Resources
