@@ -25,7 +25,7 @@ Key features:
  
 - Linux (uses `epoll`)
 - `c++` compiler with C++98 support
-- Optional: `python3` and/or `php-cgi` for CGI support
+- Optional: `python3` and/or `php` for CGI support
 ### Compilation
  
 ```bash
