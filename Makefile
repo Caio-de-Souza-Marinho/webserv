@@ -54,7 +54,7 @@ ${OBJ_DIR}/%.o:	${SRC_DIR}/%.cpp
 	@mkdir -p $(dir $@)
 	@${CC} ${FLAGS} ${INCLUDES} -c $< -o $@
 
-TEST_DIR = tests
+TEST_DIR = tests/components/
 
 TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
 	     ${TEST_DIR}/TestUtils.cpp \

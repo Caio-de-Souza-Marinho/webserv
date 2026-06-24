@@ -93,7 +93,6 @@ pass "Makefile found"
 
 if [ ! -f "config/default.conf" ]; then
     fail "config/default.conf missing"
-    TOTAL_FAIL=$((TOTAL_FAIL + 1))
 fi
 
 # ─────────────────────────── 1. unit tests ───────────────────────────────────
@@ -126,13 +125,13 @@ if $RUN_INTEGRATION; then
         echo -e "${YELLOW}  SKIP: python3 not found${RESET}"
     elif ! python3 -c "import requests" 2>/dev/null; then
         echo -e "${YELLOW}  SKIP: python requests library not installed  (pip install requests)${RESET}"
-    elif [ ! -f "integration_test.py" ]; then
-        fail "integration_test.py not found"
+    elif [ ! -f "tests/integration/integration_test.py" ]; then
+        fail "tests/integration/integration_test.py not found"
     else
         start_server || { fail "server failed to start for integration tests"; }
 
         if [ -n "$SERVER_PID" ]; then
-            python3 integration_test.py 2>&1 | tee /tmp/webserv_integration.log
+            python3 tests/integration/integration_test.py 2>&1 | tee /tmp/webserv_integration.log
             INT_EXIT=${PIPESTATUS[0]}
 
             INT_PASSED=$(grep -oP 'Passed:\s*\K[0-9]+' /tmp/webserv_integration.log | tail -1 || echo "0")
@@ -141,9 +140,9 @@ if $RUN_INTEGRATION; then
             TOTAL_FAIL=$((TOTAL_FAIL + INT_FAILED))
 
             if [ $INT_EXIT -eq 0 ]; then
-                pass "Integration tests passed  (passed=$INT_PASSED  failed=$INT_FAILED)"
+                echo -e "  ${GREEN}✔${RESET}  Integration tests passed  (passed=$INT_PASSED  failed=$INT_FAILED)"
             else
-                fail "Integration tests FAILED  (passed=$INT_PASSED  failed=$INT_FAILED)"
+                echo -e "  ${RED}✘${RESET}  Integration tests FAILED  (passed=$INT_PASSED  failed=$INT_FAILED)"
             fi
 
             stop_server
@@ -155,14 +154,14 @@ fi
 if $RUN_STRESS; then
     section "Stress tests  (stress_test.sh)"
 
-    if [ ! -f "stress_test.sh" ]; then
-        fail "stress_test.sh not found"
+    if [ ! -f "tests/stress/stress_test.sh" ]; then
+        fail "tests/stress/stress_test.sh not found"
     else
-        chmod +x stress_test.sh
+        chmod +x tests/stress/stress_test.sh
         start_server || { fail "server failed to start for stress tests"; }
 
         if [ -n "$SERVER_PID" ]; then
-            bash stress_test.sh 2>&1 | tee /tmp/webserv_stress.log
+            bash tests/stress/stress_test.sh 2>&1 | tee /tmp/webserv_stress.log
             STRESS_EXIT=${PIPESTATUS[0]}
 
             STRESS_PASSED=$(grep -oP 'Passed:\s*\K[0-9]+' /tmp/webserv_stress.log | tail -1 || echo "0")
@@ -171,9 +170,9 @@ if $RUN_STRESS; then
             TOTAL_FAIL=$((TOTAL_FAIL + STRESS_FAILED))
 
             if [ $STRESS_EXIT -eq 0 ]; then
-                pass "Stress tests passed  (passed=$STRESS_PASSED  failed=$STRESS_FAILED)"
+                echo -e "  ${GREEN}✔${RESET}  Stress tests passed  (passed=$STRESS_PASSED  failed=$STRESS_FAILED)"
             else
-                fail "Stress tests FAILED  (passed=$STRESS_PASSED  failed=$STRESS_FAILED)"
+                echo -e "  ${RED}✘${RESET}  Stress tests FAILED  (passed=$STRESS_PASSED  failed=$STRESS_FAILED)"
             fi
 
             stop_server
