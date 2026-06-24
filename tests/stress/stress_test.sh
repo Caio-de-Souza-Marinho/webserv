@@ -41,32 +41,18 @@ fi
 echo ""
 echo "=== Keep-Alive pipeline (siege) ==="
 
-#if require_tool ab; then
-#    echo "Using ab"
-
-#    RESULT=$(ab -q -n 2000 -c 50 -k "$BASE/index.html" 2>&1)
-#    FAILED=$(echo "$RESULT" | grep "Failed requests" | awk '{print $3}')
-
-#    check "Keep-Alive: 0 failed requests" "$([ "$FAILED" = "0" ] && echo 0 || echo 1)"
-
-
-#elif require_tool siege; then
-#    echo "ab not found → using siege fallback"
-
-    # siege equivalent of:
-    # ab -n 2000 -c 50
-RESULT=$(siege -q -c 50 -r 40 "$BASE/index.html" 2>&1 | tee /tmp/siege_ab_fallback.txt)
-
-    # siege does not expose "failed requests" cleanly,
-    # so we approximate via availability
-AVAIL=$(grep "availability" /tmp/siege_ab_fallback.txt | awk -F: '{print $2}' | tr -d ' ,')
-AVAIL_INT=$(echo "$AVAIL" | cut -d'.' -f1)
-
-check "Keep-Alive: siege availability >= 99%" \
-	"$([ "${AVAIL_INT:-0}" -ge 99 ] && echo 0 || echo 1)"
-#else
-#    echo "SKIP: neither ab nor siege available"
-#fi
+if require_tool siege; then
+    # 50 concurrent users x 40 repetitions = 2000 requests (equiv. of ab -n 2000 -c 50 -k)
+    # siege availability is a more reliable metric than ab's "Failed requests" counter,
+    # which flags content-length mismatches as failures even on healthy responses
+    siege -q -c 50 -r 40 "$BASE/index.html" 2>&1 | tee /tmp/siege_keepalive.txt
+    AVAIL=$(grep "availability" /tmp/siege_keepalive.txt | awk -F: '{print $2}' | tr -d ' ,')
+    AVAIL_INT=$(echo "$AVAIL" | cut -d'.' -f1)
+    check "Keep-Alive: siege availability >= 99%" \
+        "$([ "${AVAIL_INT:-0}" -ge 99 ] && echo 0 || echo 1)"
+else
+    echo "SKIP: siege not installed"
+fi
 
 echo ""
 echo "=== Slow client timeout ==="
