@@ -62,6 +62,8 @@ TESTS_SRCS = ${TEST_DIR}/TestRunner.cpp \
 	     ${TEST_DIR}/TestRouter.cpp \
 	     ${TEST_DIR}/TestConfigParser.cpp \
 	     ${TEST_DIR}/TestResponseBuilder.cpp \
+	     ${TEST_DIR}/TestMultipartParser.cpp \
+	     ${TEST_DIR}/TestSessionManager.cpp \
 	     ${SRC_DIR}/Request.cpp \
 	     ${SRC_DIR}/RequestParser.cpp \
 	     ${SRC_DIR}/Logger.cpp \
