@@ -4,6 +4,7 @@ void	testRequestParser();
 void	testRouter();
 void	testConfigParser();
 void	testResponseBuilder();
+void	testMultipartParser();
 
 int	main()
 {
@@ -11,6 +12,7 @@ int	main()
 	testRouter();
 	testConfigParser();
 	testResponseBuilder();
+	testMultipartParser();
 
 	std::cout << "\nPassed: " << g_testsPassed << std::endl;
 	std::cout << "Failed: " << g_testsFailed << std::endl;
