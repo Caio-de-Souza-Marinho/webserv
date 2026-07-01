@@ -455,21 +455,19 @@ void	WebServer::writeClient(int fd)
 
 	Client	&client = clients[fd];
 
-	while (client.writeOffset < client.writeBuffer.size())
+	ssize_t	sent = send(fd, client.writeBuffer.c_str() + client.writeOffset, client.writeBuffer.size() - client.writeOffset, 0);
+
+	if (sent <= 0)
 	{
-		ssize_t	sent = send(fd, client.writeBuffer.c_str() + client.writeOffset, client.writeBuffer.size() - client.writeOffset, 0);
-
-		if (sent < 0)
-		{
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				return ;
-			closeClient(fd);
-			return ;
-		}
-
-		client.writeOffset += sent;
-		client.lastActivity = time(NULL);
+		closeClient(fd);
+		return ;
 	}
+
+	client.writeOffset += sent;
+	client.lastActivity = time(NULL);
+
+	if (client.writeOffset < client.writeBuffer.size())
+		return ;
 
 	if (!client.request.keepAlive)
 	{
