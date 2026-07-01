@@ -340,8 +340,6 @@ static void testParseOnlyClosingBoundary()
 
 void testMultipartParser()
 {
-	std::cout << "\n=== MultipartParser Tests ===" << std::endl;
-
 	RUN_TEST(testIsMultipartTrue);
 	RUN_TEST(testIsMultipartFalse);
 	RUN_TEST(testParseSingleFile);
