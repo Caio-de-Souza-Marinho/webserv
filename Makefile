@@ -2,6 +2,8 @@ NAME	= webserv
 CC	= c++
 FLAGS	= -Wall -Wextra -Werror -std=c++98
 
+WWW_DIRS = www/uploads www/readonly
+
 INCLUDES = -I include
 
 SRC_DIR	= src
@@ -43,9 +45,12 @@ SRCS	= ${SRC_DIR}/main.cpp \
 
 OBJS	= ${SRCS:${SRC_DIR}/%.cpp=${OBJ_DIR}/%.o}
 
+dirs:
+	@mkdir -p ${WWW_DIRS}
+
 all:		${NAME}
 
-${NAME}:	${OBJS}
+${NAME}:	dirs ${OBJS}
 	@echo "${CYAN}Compiling source files...${RESET}"
 	@${CC} ${FLAGS} ${OBJS} -o ${NAME}
 	@echo "${GREEN}Build complete!${RESET}"
@@ -84,6 +89,15 @@ test: re
 	@c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o my_tester
 	./my_tester
 
+valgrind: re
+	@c++ -Wall -Wextra -Werror -std=c++98 ${TESTS_SRCS} -I include -o my_tester
+	valgrind \
+		--leak-check=full \
+		--show-leak-kinds=all \
+		--track-fds=yes \
+		--error-exitcode=42 \
+		./my_tester
+
 clean:
 	@echo "${RED}Removing object files...${RESET}"
 	@rm -rf ${OBJ_DIR}
@@ -97,4 +111,4 @@ re:	fclean all
 run:	re
 	./${NAME} 
 
-.PHONY:	all clean fclean re run
+.PHONY:	all clean fclean re run dirs
