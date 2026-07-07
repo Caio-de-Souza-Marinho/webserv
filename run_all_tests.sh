@@ -159,6 +159,23 @@ if $RUN_INTEGRATION; then
                 echo -e "  ${RED}✘${RESET}  Integration tests FAILED  (passed=$INT_PASSED  failed=$INT_FAILED)"
             fi
 
+            # ── extra integration tests ──────────────────────────────────────
+            if [ -f "tests/integration/integration_extra.py" ]; then
+                python3 tests/integration/integration_extra.py 2>&1 | tee /tmp/webserv_integration_extra.log
+                EXTRA_EXIT=${PIPESTATUS[0]}
+
+                EXTRA_PASSED=$(grep -oP 'Passed:\s*\K[0-9]+' /tmp/webserv_integration_extra.log | tail -1 || echo "0")
+                EXTRA_FAILED=$(grep -oP 'Failed:\s*\K[0-9]+' /tmp/webserv_integration_extra.log | tail -1 || echo "0")
+                TOTAL_PASS=$((TOTAL_PASS + EXTRA_PASSED))
+                TOTAL_FAIL=$((TOTAL_FAIL + EXTRA_FAILED))
+
+                if [ $EXTRA_EXIT -eq 0 ]; then
+                    echo -e "  ${GREEN}✔${RESET}  Extra integration tests passed  (passed=$EXTRA_PASSED  failed=$EXTRA_FAILED)"
+                else
+                    echo -e "  ${RED}✘${RESET}  Extra integration tests FAILED  (passed=$EXTRA_PASSED  failed=$EXTRA_FAILED)"
+                fi
+            fi
+
             stop_server
         fi
     fi
@@ -189,7 +206,51 @@ if $RUN_STRESS; then
                 echo -e "  ${RED}✘${RESET}  Stress tests FAILED  (passed=$STRESS_PASSED  failed=$STRESS_FAILED)"
             fi
 
+            # ── extra stress tests ───────────────────────────────────────────
+            if [ -f "tests/stress/stress_extra.sh" ]; then
+                bash tests/stress/stress_extra.sh 2>&1 | tee /tmp/webserv_stress_extra.log
+                SEXTRA_EXIT=${PIPESTATUS[0]}
+
+                SEXTRA_PASSED=$(grep -oP 'Passed:\s*\K[0-9]+' /tmp/webserv_stress_extra.log | tail -1 || echo "0")
+                SEXTRA_FAILED=$(grep -oP 'Failed:\s*\K[0-9]+' /tmp/webserv_stress_extra.log | tail -1 || echo "0")
+                TOTAL_PASS=$((TOTAL_PASS + SEXTRA_PASSED))
+                TOTAL_FAIL=$((TOTAL_FAIL + SEXTRA_FAILED))
+
+                if [ $SEXTRA_EXIT -eq 0 ]; then
+                    echo -e "  ${GREEN}✔${RESET}  Extra stress tests passed  (passed=$SEXTRA_PASSED  failed=$SEXTRA_FAILED)"
+                else
+                    echo -e "  ${RED}✘${RESET}  Extra stress tests FAILED  (passed=$SEXTRA_PASSED  failed=$SEXTRA_FAILED)"
+                fi
+            fi
+
             stop_server
+        fi
+    fi
+fi
+
+# ─────────────────────────────────────────────────────────────
+# 4. Valgrind (multi-request)
+# ─────────────────────────────────────────────────────────────
+if $RUN_STRESS; then   # re-uses the --no-stress flag as a guard for valgrind too
+    section "Valgrind leak check  (valgrind_multi.sh)"
+
+    if ! command -v valgrind > /dev/null 2>&1; then
+        echo -e "${YELLOW}  SKIP: valgrind not found${RESET}"
+    elif [ ! -f "tests/valgrind/valgrind_multi.sh" ]; then
+        fail "tests/valgrind/valgrind_multi.sh not found"
+    else
+        bash tests/valgrind/valgrind_multi.sh 2>&1 | tee /tmp/webserv_valgrind_multi.log
+        VEXTRA_EXIT=${PIPESTATUS[0]}
+
+        VEXTRA_PASSED=$(grep -oP 'Passed:\s*\K[0-9]+' /tmp/webserv_valgrind_multi.log | tail -1 || echo "0")
+        VEXTRA_FAILED=$(grep -oP 'Failed:\s*\K[0-9]+' /tmp/webserv_valgrind_multi.log | tail -1 || echo "0")
+        TOTAL_PASS=$((TOTAL_PASS + VEXTRA_PASSED))
+        TOTAL_FAIL=$((TOTAL_FAIL + VEXTRA_FAILED))
+
+        if [ $VEXTRA_EXIT -eq 0 ]; then
+            echo -e "  ${GREEN}✔${RESET}  Valgrind multi-request passed  (passed=$VEXTRA_PASSED  failed=$VEXTRA_FAILED)"
+        else
+            echo -e "  ${RED}✘${RESET}  Valgrind multi-request FAILED  (passed=$VEXTRA_PASSED  failed=$VEXTRA_FAILED)"
         fi
     fi
 fi

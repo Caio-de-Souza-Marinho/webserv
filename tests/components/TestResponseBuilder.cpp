@@ -1,6 +1,6 @@
-#include "../include/ResponseBuilder.hpp"
-#include "../include/Request.hpp"
-#include "../include/Config.hpp"
+#include "../../include/ResponseBuilder.hpp"
+#include "../../include/Request.hpp"
+#include "../../include/Config.hpp"
 #include "TestUtils.hpp"
 
 #include <fstream>

@@ -1,6 +1,6 @@
-#include "../include/Router.hpp"
-#include "../include/Config.hpp"
-#include "../include/Request.hpp"
+#include "../../include/Router.hpp"
+#include "../../include/Config.hpp"
+#include "../../include/Request.hpp"
 #include "TestUtils.hpp"
 
 // ------------------------------------------------------- helpers -------------------------------------------------
