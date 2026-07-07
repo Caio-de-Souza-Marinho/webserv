@@ -429,6 +429,23 @@ void	WebServer::handleRequest(Client &client)
 			router->splitCgiPath(*route, client.request.path, scriptName, pathInfo);
 			std::string	scriptPath = router->resolvePath(*route, scriptName);
 
+			// Only gate on script-file existence when the interpreter is a language
+			// runtime (python, php, ruby, perl, node) that will actually open and
+			// execute the file.  Binary CGI handlers like cgi_tester receive the
+			// path as an argument but don't require the file to exist on disk.
+			bool isLangRuntime = (interpreter->find("python") != std::string::npos
+				|| interpreter->find("php")    != std::string::npos
+				|| interpreter->find("ruby")   != std::string::npos
+				|| interpreter->find("perl")   != std::string::npos
+				|| interpreter->find("node")   != std::string::npos);
+
+			if (isLangRuntime && access(scriptPath.c_str(), F_OK) != 0)
+			{
+				response = responseBuilder->buildErrorResponse(404, client.server->config);
+				prepareResponse(client, response);
+				return ;
+			}
+
 			if (cgiHandler->execute(client, scriptPath, *interpreter, scriptName, pathInfo))
 			{
 				registerCgi(client);
