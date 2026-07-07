@@ -1,23 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Teste de Upload</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Upload test — webserv</title>
+	<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-	<h1>Teste de Upload (multipart/form-data)</h1>
+	<header class="page-header">
+		<h1>Upload test</h1>
+		<p><code>location /uploads</code> — <span class="badge get">GET</span><span class="badge post">POST</span><span class="badge delete">DELETE</span>, autoindex on, <code>upload_path ./www/uploads</code>.</p>
+	</header>
 
-	<h2>Um arquivo</h2>
-	<form action="/uploads" method="POST" enctype="multipart/form-data">
-		<input type="file" name="file">
-		<button type="submit">Enviar</button>
-	</form>
+	<main>
+		<div class="card">
+			<h2>Single file (multipart/form-data)</h2>
+			<form action="/uploads" method="POST" enctype="multipart/form-data">
+				<input type="file" name="file" required>
+				<button type="submit">Upload</button>
+			</form>
+		</div>
 
-	<h2>Multiplos arquivos</h2>
-	<form action="/uploads" method="POST" enctype="multipart/form-data">
-		<input type="file" name="file1">
-		<input type="file" name="file2">
-		<button type="submit">Enviar 2</button>
-	</form>
+		<div class="card">
+			<h2>Multiple files (multipart/form-data)</h2>
+			<form action="/uploads" method="POST" enctype="multipart/form-data">
+				<input type="file" name="file1">
+				<input type="file" name="file2">
+				<button type="submit">Upload both</button>
+			</form>
+		</div>
+
+		<div class="card">
+			<h2>Raw body upload (no multipart)</h2>
+			<p>Sends the text below as a plain request body. The server reads the filename from a
+			<code>Content-Disposition</code> request header, falling back to an auto-generated name.</p>
+			<form class="inline" id="rawForm" onsubmit="return sendRaw(event)">
+				<input type="text" id="rawName" value="raw-test.txt" placeholder="filename">
+				<input type="text" id="rawBody" value="Hello from a raw POST!" placeholder="body content" style="flex:1; min-width:200px;">
+				<button type="submit">Send raw POST</button>
+			</form>
+			<div id="rawResult" class="result"></div>
+		</div>
+
+		<div class="card">
+			<h2>Delete a file</h2>
+			<p>Runs <span class="badge delete">DELETE</span> against <code>/uploads/&lt;filename&gt;</code>.</p>
+			<form class="inline" id="deleteForm" onsubmit="return sendDelete(event)">
+				<input type="text" id="deleteName" placeholder="filename (e.g. raw-test.txt)" style="flex:1; min-width:200px;" required>
+				<button type="submit">Delete</button>
+			</form>
+			<div id="deleteResult" class="result"></div>
+		</div>
+
+		<div class="card">
+			<h2>Current contents</h2>
+			<p><a href="/uploads/">/uploads/</a> — refresh after uploading or deleting.</p>
+		</div>
+
+		<p><a class="btn secondary" href="/">&larr; Back to test console</a></p>
+	</main>
+
+	<script>
+		function showResult(id, text, ok) {
+			var el = document.getElementById(id);
+			el.textContent = text;
+			el.className = 'result show ' + (ok ? 'status-2xx' : 'status-4xx');
+		}
+
+		function sendRaw(evt) {
+			evt.preventDefault();
+			var name = document.getElementById('rawName').value || 'raw-test.txt';
+			var body = document.getElementById('rawBody').value;
+			fetch('/uploads', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'text/plain',
+					'Content-Disposition': 'attachment; filename="' + name + '"'
+				},
+				body: body
+			}).then(function (res) {
+				return res.text().then(function (text) {
+					showResult('rawResult', res.status + ' ' + res.statusText + '\n' + text, res.status < 400);
+				});
+			}).catch(function (err) {
+				showResult('rawResult', 'Request failed: ' + err, false);
+			});
+			return false;
+		}
+
+		function sendDelete(evt) {
+			evt.preventDefault();
+			var name = document.getElementById('deleteName').value;
+			fetch('/uploads/' + encodeURIComponent(name), { method: 'DELETE' })
+				.then(function (res) {
+					showResult('deleteResult', 'DELETE /uploads/' + name + ' -> ' + res.status + ' ' + res.statusText, res.status < 400);
+				})
+				.catch(function (err) {
+					showResult('deleteResult', 'Request failed: ' + err, false);
+				});
+			return false;
+		}
+	</script>
 </body>
 </html>
