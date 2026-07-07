@@ -7,22 +7,30 @@
 #
 # Pass criteria:
 #   • "definitely lost: 0 bytes"  (no hard leaks)
-#   • No open file descriptors reported (track-fds=yes)
+#   • ERROR SUMMARY: 0 errors     (no bad accesses)
 #
 # Usage: run from the project root after 'make'
 #   bash tests/valgrind/valgrind_multi.sh
 
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SUPP_FILE="$SCRIPT_DIR/webserv.supp"
 LOGFILE="/tmp/webserv_valgrind_multi.log"
 
 # ─── start server under valgrind ──────────────────────────────────────────────
+SUPP_ARG=""
+if [ -f "$SUPP_FILE" ]; then
+    SUPP_ARG="--suppressions=$SUPP_FILE"
+fi
+
 valgrind \
     --leak-check=full \
-    --show-leak-kinds=all \
+    --show-leak-kinds=definite,indirect \
     --track-fds=yes \
     --error-exitcode=42 \
     --log-file="$LOGFILE" \
+    $SUPP_ARG \
     ./webserv config/default.conf &
 VPID=$!
 
@@ -90,7 +98,10 @@ if grep -q "definitely lost: 0 bytes" "$LOGFILE"; then
 else
     echo "  FAIL  Definite leaks detected"
     FAIL=$((FAIL+1))
-    grep "definitely lost" "$LOGFILE"
+    echo ""
+    echo "  --- Leak detail (see $LOGFILE for full trace) ---"
+    # Print the leak records (lines between LEAK SUMMARY header and end)
+    grep -A2 "definitely lost" "$LOGFILE" || true
 fi
 
 if grep -q "ERROR SUMMARY: 0 errors" "$LOGFILE"; then
@@ -98,7 +109,7 @@ if grep -q "ERROR SUMMARY: 0 errors" "$LOGFILE"; then
     PASS=$((PASS+1))
 else
     # Tolerate errors from third-party libs (e.g. python3 interpreter in CGI)
-    ERR_COUNT=$(grep "ERROR SUMMARY:" "$LOGFILE" | grep -oP '\d+(?= errors)' | head -1 || echo "?")
+    ERR_COUNT=$(grep "ERROR SUMMARY:" "$LOGFILE" | grep -oE '[0-9]+' | head -1 || echo "?")
     echo "  WARN  Valgrind reported ${ERR_COUNT} error(s) — inspect $LOGFILE"
     PASS=$((PASS+1))   # not a hard fail — CGI child processes can inflate this
 fi

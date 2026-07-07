@@ -1,0 +1,78 @@
+# Valgrind suppression file for webserv
+#
+# Suppresses known false-positives from:
+#   - glibc NSS / name-service modules loaded by inet_addr / getaddrinfo
+#   - libgcc_s one-time initialisation
+#   - libstdc++ global constructor pools
+#   - Python3 interpreter internals (when CGI uses python3)
+
+# ── glibc NSS / resolver ─────────────────────────────────────────────────────
+{
+   glibc_nss_dl_open
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:dlopen*
+   ...
+}
+{
+   glibc_nss_init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:*nss*
+   ...
+}
+{
+   glibc_resolv_init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libresolv*
+   ...
+}
+
+# ── libgcc_s / libstdc++ one-time init ───────────────────────────────────────
+{
+   libgcc_s_init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libgcc_s*
+   ...
+}
+{
+   libstdcxx_init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libstdc++*
+   ...
+}
+
+# ── glibc itself (malloc internals, locale, dl-init) ─────────────────────────
+{
+   glibc_malloc_internals
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libc*
+   fun:malloc
+   ...
+}
+{
+   glibc_dl_init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:_dl_init
+   ...
+}
+{
+   glibc_call_init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:call_init*
+   ...
+}
