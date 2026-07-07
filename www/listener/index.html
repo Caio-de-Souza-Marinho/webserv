@@ -1,10 +1,47 @@
-<html>
-	<body>
-		<h1>Home 1</h1>
-		<h2>Routes</h2>
-		<ul>
-			<li><a href="about.html">about</a></li>
-			<li><a href="/uploads/">uploads</a></li>
-		</ul>
-	</body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>webserv — listener (port 8081)</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<header class="page-header">
+		<h1>Secondary virtual host</h1>
+		<p>This <code>server</code> block listens on <code>0.0.0.0:8081</code> with its own root, <code>./www/listener</code> — a separate document root from the main host on port 8080.</p>
+	</header>
+
+	<main>
+		<div class="card">
+			<h2>Uploads</h2>
+			<h3>location /uploads — GET POST DELETE, autoindex on</h3>
+			<form action="/uploads" method="POST" enctype="multipart/form-data">
+				<input type="file" name="file" required>
+				<button type="submit">Upload</button>
+			</form>
+			<p style="margin-top:0.75rem"><a href="/uploads/">/uploads/</a> — directory listing for this host</p>
+		</div>
+
+		<div class="card">
+			<h2>Redirect</h2>
+			<h3>location /redirect — GET, return 301 /</h3>
+			<p><a href="/redirect">/redirect</a> — permanent redirect back to this page.</p>
+		</div>
+
+		<div class="card">
+			<h2>Error pages</h2>
+			<p>Only <code>404</code> and <code>500</code> have custom pages configured for this host (same files as the main host, since <code>error_page</code> paths are plain filesystem paths).</p>
+			<ul class="route-list">
+				<li><a href="/this-page-does-not-exist">/this-page-does-not-exist</a> — 404</li>
+			</ul>
+		</div>
+
+		<p><a class="btn secondary" id="mainHostLink" href="#">&larr; Back to main host (port 8080)</a></p>
+	</main>
+
+	<script>
+		document.getElementById('mainHostLink').href = 'http://' + window.location.hostname + ':8080/';
+	</script>
+</body>
 </html>

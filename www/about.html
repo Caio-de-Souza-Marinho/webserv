@@ -1,1 +1,49 @@
-<html><body><h1>About</h1></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>About — webserv</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<header class="page-header">
+		<h1>About this project</h1>
+		<p>A quick tour of what's actually running behind this page.</p>
+	</header>
+
+	<main>
+		<div class="card">
+			<h2>What it is</h2>
+			<p><strong>webserv</strong> is an HTTP/1.1 server written from scratch in C++98 for 42 School. A single
+			<code>epoll</code> instance drives every socket and CGI pipe, so the whole server runs non-blocking on
+			one thread — no worker pool, no blocking reads.</p>
+		</div>
+
+		<div class="card">
+			<h2>What it supports</h2>
+			<ul class="route-list">
+				<li>Static file serving with MIME-type detection</li>
+				<li>Directory listing (<code>autoindex</code>)</li>
+				<li>File uploads via <span class="badge post">POST</span>, multipart or raw</li>
+				<li>File removal via <span class="badge delete">DELETE</span></li>
+				<li>CGI execution (Python, PHP) with proper <code>SCRIPT_NAME</code>/<code>PATH_INFO</code> splitting</li>
+				<li>Chunked transfer-encoding on input</li>
+				<li>Keep-alive connections</li>
+				<li>Cookie-based sessions</li>
+				<li>Configurable error pages, body-size limits, and redirects</li>
+				<li>Timeouts for idle clients and runaway CGI processes</li>
+			</ul>
+		</div>
+
+		<div class="card">
+			<h2>This page itself</h2>
+			<p>You're looking at a static file served from <code>www/about.html</code> through the default
+			<code>location /</code> route — nothing fancier than <code>open()</code> + <code>read()</code> and a
+			<code>Content-Type: text/html</code> header.</p>
+		</div>
+
+		<p><a class="btn secondary" href="/">&larr; Back to test console</a></p>
+	</main>
+</body>
+</html>

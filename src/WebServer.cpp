@@ -379,10 +379,21 @@ void	WebServer::handleSessionTest(Client &client)
 	int		visits = sessionManager->incrementVisits(sessionId);
 
 	std::ostringstream	body;
-	body << "<html><body><h1>Session Test</h1>"
-		<< "<p>Visits in this session: " << visits << "</p>"
-		<< "<p>Session ID: " << sessionId << "</p>"
-		<< "</body></html>";
+	body << "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">"
+		<< "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+		<< "<title>Session test - webserv</title>"
+		<< "<link rel=\"stylesheet\" href=\"/style.css\"></head><body>"
+		<< "<header class=\"page-header\"><h1>Session test</h1>"
+		<< "<p><code>location /session-test</code> - handled directly in C++, not a static file. "
+		<< "Reload this page to see the visit counter go up.</p></header>"
+		<< "<main><div class=\"card\">"
+		<< "<table><tbody>"
+		<< "<tr><th>Visits in this session</th><td>" << visits << "</td></tr>"
+		<< "<tr><th>Session ID</th><td class=\"mono\">" << sessionId << "</td></tr>"
+		<< "<tr><th>Cookie</th><td>" << (isNew ? "just issued (Set-Cookie sent)" : "sent by the browser") << "</td></tr>"
+		<< "</tbody></table></div>"
+		<< "<p><a class=\"btn secondary\" href=\"/\">&larr; Back to test console</a></p>"
+		<< "</main></body></html>";
 	Response	res;
 	res.statusCode = 200;
 	res.headers["Content-type"] = "text/html";

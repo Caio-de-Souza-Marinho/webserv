@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Read-only directory — webserv</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<header class="page-header">
+		<h1>Read-only directory</h1>
+		<p><code>location /readonly</code> only allows <span class="badge get">GET</span>. No <code>index</code> file is defined here on purpose, so <code>/readonly/</code> falls through to the autoindex listing instead of serving a page directly.</p>
+	</header>
+
+	<main>
+		<div class="card">
+			<p>Try <span class="badge post">POST</span> or <span class="badge delete">DELETE</span> against anything in this folder — both should come back as <code>405 Method Not Allowed</code>.</p>
+		</div>
+		<p><a class="btn secondary" href="/readonly/">&larr; Back to listing</a> &nbsp; <a class="btn secondary" href="/">Home</a></p>
+	</main>
+</body>
+</html>

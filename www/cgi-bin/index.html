@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>CGI test hub — webserv</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<header class="page-header">
+		<h1>CGI test hub</h1>
+		<p><code>location /cgi-bin</code> — <span class="badge get">GET</span><span class="badge post">POST</span>, <code>cgi .py /usr/bin/python3</code>, <code>cgi .php /usr/bin/php</code>. This page itself is a plain static file (<code>.html</code> isn't a registered CGI extension), everything below actually forks a script.</p>
+	</header>
+
+	<main>
+		<div class="card">
+			<h2>Query string (GET)</h2>
+			<h3>hello.py</h3>
+			<p>Reads <code>QUERY_STRING</code> and prints a greeting.</p>
+			<form class="inline" method="GET" action="hello.py">
+				<input type="text" name="name" value="World">
+				<button type="submit">Run hello.py</button>
+			</form>
+		</div>
+
+		<div class="card">
+			<h2>POST body</h2>
+			<h3>form.py</h3>
+			<p>Reads <code>CONTENT_LENGTH</code> bytes from stdin and echoes the raw body back.</p>
+			<form method="POST" action="form.py">
+				<input type="text" name="field1" value="hello">
+				<input type="text" name="field2" value="webserv">
+				<button type="submit">Run form.py</button>
+			</form>
+		</div>
+
+		<div class="card">
+			<h2>PATH_INFO splitting</h2>
+			<h3>path_info.py</h3>
+			<p>Shows how the router splits <code>SCRIPT_NAME</code> from the extra path segments after the script.</p>
+			<ul class="route-list">
+				<li><a href="path_info.py">path_info.py</a> — no extra path</li>
+				<li><a href="path_info.py/extra/path?foo=bar">path_info.py/extra/path?foo=bar</a> — with <code>PATH_INFO</code> and a query string</li>
+			</ul>
+		</div>
+
+		<div class="card">
+			<h2>PHP CGI</h2>
+			<h3>info.php / test.php</h3>
+			<p>Same mechanism, different interpreter. Requires <code>php-cgi</code>/<code>php</code> to be installed on the host.</p>
+			<ul class="route-list">
+				<li><a href="info.php?foo=bar">info.php?foo=bar</a></li>
+				<li><a href="test.php?foo=bar">test.php?foo=bar</a></li>
+			</ul>
+		</div>
+
+		<div class="card">
+			<h2>Plain Python demo</h2>
+			<h3>test.py</h3>
+			<ul class="route-list">
+				<li><a href="test.py?foo=bar">test.py?foo=bar</a></li>
+			</ul>
+		</div>
+
+		<p><a class="btn secondary" href="/">&larr; Back to test console</a></p>
+	</main>
+</body>
+</html>

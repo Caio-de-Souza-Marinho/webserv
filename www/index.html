@@ -1,10 +1,227 @@
-<html>
-	<body>
-		<h1>Home 1</h1>
-		<h2>Routes</h2>
-		<ul>
-			<li><a href="about.html">about</a></li>
-			<li><a href="/uploads/">uploads</a></li>
-		</ul>
-	</body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>webserv — Test Console</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<header class="page-header">
+		<h1>webserv — Test Console</h1>
+		<p>Primary virtual host — <code>0.0.0.0:8080</code>, root <code>./www</code>. Every route below exercises one piece of the server.</p>
+	</header>
+
+	<main>
+		<div class="card" id="lastStatusCard" style="border: 2px solid var(--accent);">
+			<h2 style="margin-bottom:0.5rem;">Last response received</h2>
+			<div id="lastStatusBody">
+				<p style="color:var(--muted); margin:0;">No requests yet — click any <strong>check</strong> or test button below.</p>
+			</div>
+		</div>
+
+		<div class="grid">
+			<div class="card">
+				<h2>Static files</h2>
+				<h3>location / — GET POST DELETE</h3>
+				<p>Plain file serving straight off the filesystem, MIME type detected from the extension.</p>
+				<ul class="route-list">
+					<li><a href="/about.html">/about.html</a> — small static page <button type="button" class="secondary" onclick="checkStatus('/about.html')">check</button></li>
+					<li><a href="/style.css">/style.css</a> — this stylesheet, served as <code>text/css</code> <button type="button" class="secondary" onclick="checkStatus('/style.css')">check</button></li>
+				</ul>
+			</div>
+
+			<div class="card">
+				<h2>Uploads</h2>
+				<h3>location /uploads — GET POST DELETE, autoindex on</h3>
+				<p>Multipart and raw uploads, listing, and delete — all in one page.</p>
+				<ul class="route-list">
+					<li><a href="/upload-test.html">/upload-test.html</a> — upload &amp; delete test page</li>
+					<li><a href="/uploads/">/uploads/</a> — directory listing (autoindex) <button type="button" class="secondary" onclick="checkStatus('/uploads/')">check</button></li>
+				</ul>
+			</div>
+
+			<div class="card">
+				<h2>Read-only directory</h2>
+				<h3>location /readonly — GET only, autoindex on</h3>
+				<p>Same autoindex mechanism, but the route only allows <span class="badge get">GET</span>. Good for a quick 405 check.</p>
+				<ul class="route-list">
+					<li><a href="/readonly/">/readonly/</a> — directory listing <button type="button" class="secondary" onclick="checkStatus('/readonly/')">check</button></li>
+				</ul>
+				<button type="button" class="secondary" onclick="tryMethod('deleteReadonly', '/readonly/notice.html', 'DELETE')">DELETE /readonly/notice.html (expect 405)</button>
+				<div id="deleteReadonly" class="result"></div>
+			</div>
+
+			<div class="card">
+				<h2>Redirect</h2>
+				<h3>location /redirect — GET, return 302 /</h3>
+				<p>A route that never serves a file, only a <code>Location</code> header.</p>
+				<ul class="route-list">
+					<li><a href="/redirect">/redirect</a> — follow it, ends up back here <button type="button" class="secondary" onclick="checkRedirect('/redirect')">check</button></li>
+				</ul>
+			</div>
+
+			<div class="card">
+				<h2>CGI</h2>
+				<h3>location /cgi-bin — GET POST, .py &amp; .php interpreters</h3>
+				<p>Python and PHP scripts executed through fork/exec, with query strings, POST bodies and PATH_INFO.</p>
+				<ul class="route-list">
+					<li><a href="/cgi-bin/index.html">/cgi-bin/index.html</a> — CGI test hub <button type="button" class="secondary" onclick="checkStatus('/cgi-bin/index.html')">check</button></li>
+				</ul>
+			</div>
+
+			<div class="card">
+				<h2>Sessions &amp; cookies</h2>
+				<h3>location /session-test — handled in C++, not a static file</h3>
+				<p>Issues a <code>session_id</code> cookie on first visit and counts requests per session.</p>
+				<ul class="route-list">
+					<li><a href="/session-test">/session-test</a> — reload it a few times <button type="button" class="secondary" onclick="checkStatus('/session-test')">check</button></li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="card">
+			<h2>Error pages cheat sheet</h2>
+			<p>Each status below has a custom page configured via <code>error_page</code> in <code>config/default.conf</code>. Some are one click away, others need a raw request since browsers won't send a malformed one for you.</p>
+			<table>
+				<thead>
+					<tr><th>Code</th><th>When it fires</th><th>Try it</th></tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="mono status-4xx">400</td>
+						<td>Malformed request line (e.g. a lowercase HTTP method).</td>
+						<td><code>curl -X get http://localhost:8080/</code></td>
+					</tr>
+					<tr>
+						<td class="mono status-4xx">403</td>
+						<td>File exists but can't be read, or a directory has autoindex off with no index file.</td>
+						<td><code>chmod 000</code> a file under <code>www/</code>, then request it</td>
+					</tr>
+					<tr>
+						<td class="mono status-4xx">404</td>
+						<td>No route/file matches the request path.</td>
+						<td><a href="/this-page-does-not-exist">/this-page-does-not-exist</a> <button type="button" class="secondary" onclick="checkStatus('/this-page-does-not-exist')">check</button></td>
+					</tr>
+					<tr>
+						<td class="mono status-4xx">405</td>
+						<td>Route matched, but the method isn't in its <code>allow_methods</code>.</td>
+						<td><button type="button" class="secondary" onclick="tryMethod('r405', '/readonly/', 'POST')">POST /readonly/</button><div id="r405" class="result"></div></td>
+					</tr>
+					<tr>
+						<td class="mono status-4xx">408</td>
+						<td>Client opens a connection and stays idle for more than 30s.</td>
+						<td><code>nc localhost 8080</code> then wait ~30s</td>
+					</tr>
+					<tr>
+						<td class="mono status-4xx">413</td>
+						<td>Body larger than <code>client_max_body_size</code> (10 MiB here).</td>
+						<td><button type="button" class="secondary" onclick="trigger413()">POST an 11 MiB body</button><div id="r413" class="result"></div></td>
+					</tr>
+					<tr>
+						<td class="mono status-5xx">500</td>
+						<td>Server-side failure (e.g. upload directory missing/unwritable).</td>
+						<td>configuration-dependent, no safe live trigger</td>
+					</tr>
+					<tr>
+						<td class="mono status-5xx">501</td>
+						<td>Defined for completeness; the request parser currently rejects any method outside GET/POST/DELETE with 405 before this path is reached.</td>
+						<td><a href="/error_pages/501.html">view page</a></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<div class="card">
+			<h2>Secondary virtual host</h2>
+			<p>A second <code>server</code> block listens on port 8081 with its own root, uploads and redirect.</p>
+			<p><a id="listenerLink" href="#">http://localhost:8081/</a></p>
+		</div>
+	</main>
+
+	<footer class="page-footer">
+		<p>webserv — 42 School project. <a href="/about.html">About this project</a></p>
+	</footer>
+
+	<script>
+		document.getElementById('listenerLink').href = 'http://' + window.location.hostname + ':8081/';
+
+		function statusClass(status) {
+			if (status >= 500) return 'status-5xx';
+			if (status >= 400) return 'status-4xx';
+			if (status > 0) return 'status-2xx';
+			return '';
+		}
+
+		function recordStatus(method, path, status, statusText) {
+			var body = document.getElementById('lastStatusBody');
+			var cls = statusClass(status);
+			var codeText = status > 0 ? status : '—';
+			body.innerHTML =
+				'<div style="display:flex; align-items:baseline; gap:0.75rem; flex-wrap:wrap;">' +
+					'<span class="' + cls + '" style="font-size:2.25rem; font-weight:700; line-height:1;">' + codeText + '</span>' +
+					'<span style="font-size:1.1rem; color:var(--muted);">' + (statusText || '') + '</span>' +
+				'</div>' +
+				'<p class="mono" style="margin:0.5rem 0 0; color:var(--muted);">' + method + ' ' + path + ' &middot; ' + new Date().toLocaleTimeString() + '</p>';
+		}
+
+		function showResult(id, text, ok) {
+			var el = document.getElementById(id);
+			el.textContent = text;
+			el.className = 'result show ' + (ok ? 'status-2xx' : 'status-4xx');
+		}
+
+		function tryMethod(id, path, method) {
+			fetch(path, { method: method })
+				.then(function (res) {
+					showResult(id, method + ' ' + path + ' -> ' + res.status + ' ' + res.statusText, res.status < 400);
+					recordStatus(method, path, res.status, res.statusText);
+				})
+				.catch(function (err) {
+					showResult(id, 'Request failed: ' + err, false);
+					recordStatus(method, path, 0, 'Request failed: ' + err);
+				});
+		}
+
+		function checkStatus(path, method) {
+			method = method || 'GET';
+			fetch(path, { method: method })
+				.then(function (res) {
+					recordStatus(method, path, res.status, res.statusText);
+				})
+				.catch(function (err) {
+					recordStatus(method, path, 0, 'Request failed: ' + err);
+				});
+		}
+
+		function checkRedirect(path) {
+			fetch(path, { method: 'GET', redirect: 'manual' })
+				.then(function (res) {
+					if (res.type === 'opaqueredirect') {
+						recordStatus('GET', path, 0, '3xx redirect followed — browsers hide the exact code/Location in manual mode, but a redirect did happen');
+					} else {
+						recordStatus('GET', path, res.status, res.statusText);
+					}
+				})
+				.catch(function (err) {
+					recordStatus('GET', path, 0, 'Request failed: ' + err);
+				});
+		}
+
+		function trigger413() {
+			var big = new Uint8Array(11 * 1024 * 1024);
+			fetch('/uploads', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/octet-stream' },
+				body: big
+			}).then(function (res) {
+				showResult('r413', 'POST /uploads (11 MiB) -> ' + res.status + ' ' + res.statusText, res.status < 400);
+				recordStatus('POST', '/uploads', res.status, res.statusText);
+			}).catch(function (err) {
+				showResult('r413', 'Request failed: ' + err, false);
+				recordStatus('POST', '/uploads', 0, 'Request failed: ' + err);
+			});
+		}
+	</script>
+</body>
 </html>

@@ -1,0 +1,4 @@
+Just a plain text file living in the read-only demo directory.
+
+GET should return this file's contents.
+POST and DELETE against this path should return 405 Method Not Allowed.
