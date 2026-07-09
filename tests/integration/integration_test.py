@@ -25,7 +25,7 @@ def test_static():
 
     r = requests.get(f"{BASE}/index.html")
     check("GET /index.html → 200", r.status_code == 200)
-    check("GET /index.html has html body", "<html>" in r.text.lower())
+    check("GET /index.html has html body", "<html" in r.text.lower())
     check("GET /index.html Content-Type is text/html", "text/html" in r.headers.get("Content-Type", ""))
 
     r = requests.get(f"{BASE}/about.html")

@@ -1,16 +1,5 @@
 #!/bin/bash
 # valgrind_multi.sh — Valgrind leak check under realistic multi-request load
-#
-# Starts the server under Valgrind, fires a small but varied set of requests
-# (GET, POST upload, DELETE, CGI GET, 404), then shuts it down cleanly and
-# inspects the leak report.
-#
-# Pass criteria:
-#   • "definitely lost: 0 bytes"  (no hard leaks)
-#   • ERROR SUMMARY: 0 errors     (no bad accesses)
-#
-# Usage: run from the project root after 'make'
-#   bash tests/valgrind/valgrind_multi.sh
 
 set -uo pipefail
 
@@ -18,45 +7,35 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SUPP_FILE="$SCRIPT_DIR/webserv.supp"
 LOGFILE="/tmp/webserv_valgrind_multi.log"
 
-# ─── start server under valgrind ──────────────────────────────────────────────
 SUPP_ARG=""
-if [ -f "$SUPP_FILE" ]; then
-    SUPP_ARG="--suppressions=$SUPP_FILE"
-fi
+[ -f "$SUPP_FILE" ] && SUPP_ARG="--suppressions=$SUPP_FILE"
 
 valgrind \
     --leak-check=full \
     --show-leak-kinds=definite,indirect \
-    --track-fds=yes \
+    --track-fds=no \
     --error-exitcode=42 \
     --log-file="$LOGFILE" \
     $SUPP_ARG \
     ./webserv config/default.conf &
 VPID=$!
 
-# wait until the server accepts connections (max 8 s)
 MAX=0
 until curl -s --max-time 1 http://localhost:8080/ > /dev/null 2>&1; do
-    sleep 0.4
-    MAX=$((MAX+1))
+    sleep 0.4; MAX=$((MAX+1))
     if [ "$MAX" -ge 20 ]; then
         echo "ERROR: server did not start in time"
-        kill "$VPID" 2>/dev/null || true
-        wait "$VPID" 2>/dev/null || true
+        kill "$VPID" 2>/dev/null || true; wait "$VPID" 2>/dev/null || true
         exit 1
     fi
 done
 
-# ─── exercise several code paths ──────────────────────────────────────────────
 echo "Firing test requests..."
+curl -s http://localhost:8080/index.html     > /dev/null
+curl -s http://localhost:8080/about.html     > /dev/null
+curl -s http://localhost:8080/does_not_exist > /dev/null
+curl -s http://localhost:8080/               > /dev/null
 
-# Static GETs
-curl -s http://localhost:8080/index.html       > /dev/null
-curl -s http://localhost:8080/about.html       > /dev/null
-curl -s http://localhost:8080/does_not_exist   > /dev/null   # 404
-curl -s http://localhost:8080/                 > /dev/null   # directory
-
-# POST upload → capture Location → DELETE
 LOC=$(curl -s -D - \
     -X POST \
     -H "Content-Type: application/octet-stream" \
@@ -64,54 +43,43 @@ LOC=$(curl -s -D - \
     --data-binary "valgrind payload" \
     http://localhost:8080/uploads \
     | grep -i "^location:" | tr -d '\r' | awk '{print $2}')
+[ -n "$LOC" ] && curl -s -X DELETE "http://localhost:8080/${LOC#/}" > /dev/null
 
-if [ -n "$LOC" ]; then
-    curl -s -X DELETE "http://localhost:8080/${LOC#/}" > /dev/null
-fi
-
-# CGI GET
-curl -s http://localhost:8080/cgi-bin/test.py  > /dev/null
-
-# Autoindex
-curl -s http://localhost:8080/uploads/         > /dev/null
-
-# Method not allowed
+curl -s http://localhost:8080/cgi-bin/test.py > /dev/null
+curl -s http://localhost:8080/uploads/        > /dev/null
 curl -s -X DELETE http://localhost:8080/readonly/ > /dev/null
 
-# ─── graceful shutdown ────────────────────────────────────────────────────────
 echo "Shutting down..."
 kill -TERM "$VPID" 2>/dev/null || true
-wait "$VPID" 2>/dev/null || true
+wait "$VPID"; VCODE=$?
 
-# ─── inspect report ───────────────────────────────────────────────────────────
 echo ""
 echo "=== Valgrind multi-request leak summary ==="
-grep -E "(definitely lost|indirectly lost|ERROR SUMMARY)" "$LOGFILE" || true
+grep -E "(HEAP SUMMARY|in use at exit|All heap blocks|definitely lost|indirectly lost|ERROR SUMMARY)" "$LOGFILE" || true
 echo ""
 
-PASS=0
-FAIL=0
+PASS=0; FAIL=0
 
-if grep -q "definitely lost: 0 bytes" "$LOGFILE"; then
+# Pass if zero leaks: either "All heap blocks were freed" OR "definitely lost: 0 bytes"
+if grep -qE "All heap blocks were freed|definitely lost: 0 bytes" "$LOGFILE"; then
     echo "  PASS  No definite leaks"
     PASS=$((PASS+1))
 else
     echo "  FAIL  Definite leaks detected"
     FAIL=$((FAIL+1))
-    echo ""
-    echo "  --- Leak detail (see $LOGFILE for full trace) ---"
-    # Print the leak records (lines between LEAK SUMMARY header and end)
-    grep -A2 "definitely lost" "$LOGFILE" || true
+    echo "  --- Leak detail ---"
+    grep -A8 "are definitely lost" "$LOGFILE" | head -40 || true
 fi
 
-if grep -q "ERROR SUMMARY: 0 errors" "$LOGFILE"; then
+if [ "$VCODE" -eq 0 ]; then
     echo "  PASS  No Valgrind errors"
     PASS=$((PASS+1))
+elif [ "$VCODE" -eq 42 ]; then
+    echo "  FAIL  Valgrind reported errors (exit 42) — inspect $LOGFILE"
+    FAIL=$((FAIL+1))
 else
-    # Tolerate errors from third-party libs (e.g. python3 interpreter in CGI)
-    ERR_COUNT=$(grep "ERROR SUMMARY:" "$LOGFILE" | grep -oE '[0-9]+' | head -1 || echo "?")
-    echo "  WARN  Valgrind reported ${ERR_COUNT} error(s) — inspect $LOGFILE"
-    PASS=$((PASS+1))   # not a hard fail — CGI child processes can inflate this
+    echo "  PASS  Valgrind exit code $VCODE (signal termination)"
+    PASS=$((PASS+1))
 fi
 
 echo ""

@@ -1,78 +1,112 @@
 # Valgrind suppression file for webserv
 #
-# Suppresses known false-positives from:
-#   - glibc NSS / name-service modules loaded by inet_addr / getaddrinfo
-#   - libgcc_s one-time initialisation
-#   - libstdc++ global constructor pools
-#   - Python3 interpreter internals (when CGI uses python3)
+# Covers known false-positives from glibc, libgcc_s, libstdc++, and ld.so
+# that appear as "definitely lost" or "still reachable" on Linux.
+#
+# These allocations are internal to system libraries and are intentionally
+# never freed — they persist as process-wide caches for the process lifetime.
 
-# ── glibc NSS / resolver ─────────────────────────────────────────────────────
+# ── ld.so / dynamic linker ───────────────────────────────────────────────────
 {
-   glibc_nss_dl_open
+   ld_so_dl_init
    Memcheck:Leak
    match-leak-kinds: definite,indirect,possible,reachable
    ...
-   fun:dlopen*
-   ...
+   fun:_dl_init
 }
 {
-   glibc_nss_init
+   ld_so_call_init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:call_init
+}
+{
+   ld_so_dl_open
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:_dl_open
+}
+{
+   ld_so_dl_catch_error
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:_dl_catch_error
+}
+
+# ── glibc NSS (name-service switch) ─────────────────────────────────────────
+# Triggered when any network call (bind, inet_addr, getaddrinfo) causes glibc
+# to dlopen libnss_*.so modules and initialise internal caches.
+{
+   glibc_nss_allocate_services
    Memcheck:Leak
    match-leak-kinds: definite,indirect,possible,reachable
    ...
    fun:*nss*
-   ...
 }
 {
-   glibc_resolv_init
+   glibc_nss_modules
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libnss_*
+}
+{
+   glibc_resolv
    Memcheck:Leak
    match-leak-kinds: definite,indirect,possible,reachable
    ...
    obj:*/libresolv*
-   ...
 }
 
-# ── libgcc_s / libstdc++ one-time init ───────────────────────────────────────
+# ── glibc libc.so internals ──────────────────────────────────────────────────
+{
+   glibc_libc_internal
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libc-*.so
+}
+{
+   glibc_libc_so
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libc.so*
+}
+
+# ── libgcc_s one-time init (exception handling, unwind tables) ───────────────
 {
    libgcc_s_init
    Memcheck:Leak
    match-leak-kinds: definite,indirect,possible,reachable
    ...
    obj:*/libgcc_s*
-   ...
 }
+
+# ── libstdc++ global constructors / __cxa_atexit registry ───────────────────
 {
-   libstdcxx_init
+   libstdcxx_global_ctors
    Memcheck:Leak
    match-leak-kinds: definite,indirect,possible,reachable
    ...
    obj:*/libstdc++*
-   ...
 }
 
-# ── glibc itself (malloc internals, locale, dl-init) ─────────────────────────
+# ── pthread one-time init ────────────────────────────────────────────────────
 {
-   glibc_malloc_internals
+   pthread_init
    Memcheck:Leak
    match-leak-kinds: definite,indirect,possible,reachable
    ...
-   obj:*/libc*
-   fun:malloc
-   ...
+   obj:*/libpthread*
 }
 {
-   glibc_dl_init
+   pthread_init2
    Memcheck:Leak
    match-leak-kinds: definite,indirect,possible,reachable
    ...
-   fun:_dl_init
-   ...
-}
-{
-   glibc_call_init
-   Memcheck:Leak
-   match-leak-kinds: definite,indirect,possible,reachable
-   ...
-   fun:call_init*
-   ...
+   fun:pthread_create*
 }

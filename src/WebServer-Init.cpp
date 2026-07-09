@@ -87,12 +87,14 @@ WebServer::WebServer(const std::string &configPath)
 
 WebServer::~WebServer()
 {
-	// close all client fds first
+	// Close all remaining client connections: closeClient() handles the client
+	// socket, parser, and any open CGI pipe FDs / zombie processes.
+	// Collect fds first to avoid iterator invalidation inside closeClient().
+	std::vector<int>	fds;
 	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
-	{
-		delete it->second.parser;
-		close(it->first);
-	}
+		fds.push_back(it->first);
+	for (size_t i = 0; i < fds.size(); i++)
+		closeClient(fds[i]);
 
 	// close all server sockets
 	for (size_t i = 0; i < servers.size(); i++)
